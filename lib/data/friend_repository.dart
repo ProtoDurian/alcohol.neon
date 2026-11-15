@@ -1,6 +1,78 @@
 import '../core/problem.dart';
 import '../networking/api_client.dart';
 
+enum FriendRequestDecision { accept, decline, cancel }
+
+enum FriendRequestStatus {
+  pending,
+  accepted,
+  declined,
+  cancelled,
+  unavailable;
+
+  String get label => switch (this) {
+    pending => 'Pending',
+    accepted => 'Accepted',
+    declined => 'Declined',
+    cancelled => 'Cancelled',
+    unavailable => 'Request unavailable',
+  };
+}
+
+/// An authoritative occurrence, also projected onto request notifications.
+/// Missing identity on an older server is unavailable, never a pair lookup.
+class FriendRequestState {
+  final String? requestId;
+  final FriendRequestStatus status;
+  final DateTime? createdAtUtc;
+  final DateTime? resolvedAtUtc;
+
+  const FriendRequestState({
+    required this.requestId,
+    required this.status,
+    this.createdAtUtc,
+    this.resolvedAtUtc,
+  });
+
+  static const unavailable = FriendRequestState(
+    requestId: null,
+    status: FriendRequestStatus.unavailable,
+  );
+
+  static final _idPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+
+  static String? idFrom(Object? value) =>
+      value is String && _idPattern.hasMatch(value) ? value : null;
+
+  bool get pending =>
+      requestId != null && status == FriendRequestStatus.pending;
+  bool get terminal => switch (status) {
+    FriendRequestStatus.accepted ||
+    FriendRequestStatus.declined ||
+    FriendRequestStatus.cancelled => true,
+    _ => false,
+  };
+
+  factory FriendRequestState.fromJson(Map<String, Object?> json) {
+    final id = idFrom(json['requestId']);
+    final status = switch (json['status']) {
+      'pending' => FriendRequestStatus.pending,
+      'accepted' => FriendRequestStatus.accepted,
+      'declined' => FriendRequestStatus.declined,
+      'cancelled' => FriendRequestStatus.cancelled,
+      _ => FriendRequestStatus.unavailable,
+    };
+    return FriendRequestState(
+      requestId: id,
+      status: id == null ? FriendRequestStatus.unavailable : status,
+      createdAtUtc: DateTime.tryParse(json['createdAtUtc'] as String? ?? ''),
+      resolvedAtUtc: DateTime.tryParse(json['resolvedAtUtc'] as String? ?? ''),
+    );
+  }
+}
+
 // Hand-rolled models (not `generated/zinc`): pichu's checked-in OpenAPI spec
 // predates the Friend endpoints (zinc ≥ 1.39). Fold into the generated models
 // on the next `swagger_parser` regeneration.
@@ -47,11 +119,13 @@ class FriendRes {
 /// The other person on a request: the sender for incoming, the recipient for
 /// outgoing.
 class FriendRequestRes {
+  final String? requestId;
   final String userId;
   final String username;
   final DateTime? createdAtUtc;
 
   const FriendRequestRes({
+    this.requestId,
     required this.userId,
     required this.username,
     this.createdAtUtc,
@@ -59,6 +133,7 @@ class FriendRequestRes {
 
   factory FriendRequestRes.fromJson(Map<String, Object?> json) =>
       FriendRequestRes(
+        requestId: FriendRequestState.idFrom(json['requestId']),
         userId: json['userId'] as String,
         username: json['username'] as String? ?? '',
         createdAtUtc: DateTime.tryParse(json['createdAtUtc'] as String? ?? ''),
@@ -144,17 +219,40 @@ class FriendRepository {
     }, (j) => (j as Map<String, Object?>)['relation'] as String? ?? 'outgoing');
   }
 
-  Future<Result<FriendRes>> accept(String userId, String fromUserId) {
-    return _api.post(
-      '$_base/$userId/requests/$fromUserId/accept',
-      null,
-      (j) => FriendRes.fromJson(j as Map<String, Object?>),
-    );
-  }
+  Future<Result<FriendRequestState>> request(String userId, String requestId) =>
+      _api.get(
+        '$_base/$userId/requests/$requestId',
+        (j) => _occurrence(j, requestId),
+      );
 
-  /// Declines an incoming request or cancels an outgoing one.
-  Future<Result<void>> deleteRequest(String userId, String otherUserId) {
-    return _api.delete('$_base/$userId/requests/$otherUserId');
+  Future<Result<FriendRequestState>> resolve(
+    String userId,
+    String requestId,
+    FriendRequestDecision decision,
+  ) => _api.post(
+    '$_base/$userId/requests/$requestId/resolve',
+    {'decision': decision.name},
+    (j) {
+      final state = _occurrence(j, requestId);
+      final expected = switch (decision) {
+        FriendRequestDecision.accept => FriendRequestStatus.accepted,
+        FriendRequestDecision.decline => FriendRequestStatus.declined,
+        FriendRequestDecision.cancel => FriendRequestStatus.cancelled,
+      };
+      if (state.status != expected) {
+        throw const FormatException('Unexpected friend request decision');
+      }
+      return state;
+    },
+  );
+
+  static FriendRequestState _occurrence(Object? json, String requestId) {
+    final state = FriendRequestState.fromJson(json as Map<String, Object?>);
+    if (state.requestId != requestId ||
+        state.status == FriendRequestStatus.unavailable) {
+      throw const FormatException('Unexpected friend request identity');
+    }
+    return state;
   }
 
   Future<Result<FriendInviteRes>> createInvite(String userId) {

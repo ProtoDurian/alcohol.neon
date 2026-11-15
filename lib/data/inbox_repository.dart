@@ -1,5 +1,6 @@
 import '../core/problem.dart';
 import '../networking/api_client.dart';
+import 'friend_repository.dart';
 
 /// One inbox notification. [data] is the JSON text the app uses for the tap
 /// action (its shape depends on [kind]).
@@ -16,6 +17,7 @@ class InboxNotificationRes {
   final String? data;
   final DateTime? createdAtUtc;
   final DateTime? readAtUtc;
+  final FriendRequestState? friendRequest;
 
   const InboxNotificationRes({
     required this.id,
@@ -26,9 +28,25 @@ class InboxNotificationRes {
     this.data,
     this.createdAtUtc,
     this.readAtUtc,
+    this.friendRequest,
   });
 
   bool get read => readAtUtc != null;
+
+  InboxNotificationRes copyWith({
+    DateTime? readAtUtc,
+    FriendRequestState? friendRequest,
+  }) => InboxNotificationRes(
+    id: id,
+    kind: kind,
+    title: title,
+    body: body,
+    actorUserId: actorUserId,
+    data: data,
+    createdAtUtc: createdAtUtc,
+    readAtUtc: readAtUtc ?? this.readAtUtc,
+    friendRequest: friendRequest ?? this.friendRequest,
+  );
 
   factory InboxNotificationRes.fromJson(Map<String, Object?> json) =>
       InboxNotificationRes(
@@ -40,6 +58,12 @@ class InboxNotificationRes {
         data: json['data'] as String?,
         createdAtUtc: DateTime.tryParse(json['createdAtUtc'] as String? ?? ''),
         readAtUtc: DateTime.tryParse(json['readAtUtc'] as String? ?? ''),
+        friendRequest: switch (json['friendRequest']) {
+          final Map<String, Object?> value => FriendRequestState.fromJson(
+            value,
+          ),
+          _ => null,
+        },
       );
 }
 
