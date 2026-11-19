@@ -35,7 +35,7 @@ jobs:
       # Read by codemagic-cli-tools `google-play` for the versionCode query.
       GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
-      - uses: AtomiCloud/actions.setup-nix@v3
+      - uses: AtomiCloud/actions.setup-nix@v4
 
       - uses: actions/download-artifact@v8
         with:

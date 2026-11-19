@@ -23,7 +23,7 @@ jobs:
     # v1.15.2 five minutes into Gradle.
     timeout-minutes: 120
     steps:
-      - uses: AtomiCloud/actions.setup-nix@v3
+      - uses: AtomiCloud/actions.setup-nix@v4
         with:
           # Everything .#build-android needs is on cache.nixos.org (Flutter, JDK) or
           # built from Google's SDK zips (androidsdk isn't in any binary cache), so
