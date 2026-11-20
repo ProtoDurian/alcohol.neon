@@ -5,6 +5,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 // about 15x faster than latest_all on the UI isolate (the Settings timezone
 // picker still loads latest_all for its full list).
 import 'package:timezone/data/latest_10y.dart' as tzdata;
+import 'package:timezone/data/latest_all.dart' as tzall;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../generated/zinc/models/habit_overview_habit_res.dart';
@@ -28,11 +29,25 @@ class NotificationService {
   @visibleForTesting
   void resetPermissionAsk() => _asked = false;
 
+  bool _fullZones = false;
+
+  /// The 10-year set leaves out old alias names (Asia/Calcutta, Europe/Kiev)
+  /// that phones report and the timezone picker offers. Load the full set
+  /// once when one of [names] is missing, so no reminder is dropped.
+  void _ensureZones(Iterable<String?> names) {
+    if (_fullZones) return;
+    final known = tz.timeZoneDatabase.locations;
+    if (names.every((n) => n == null || known.containsKey(n))) return;
+    tzall.initializeTimeZones();
+    _fullZones = true;
+  }
+
   Future<void> init() async {
     if (_ready) return;
     tzdata.initializeTimeZones();
     try {
       final name = (await FlutterTimezone.getLocalTimezone()).identifier;
+      _ensureZones([name]);
       tz.setLocalLocation(tz.getLocation(name));
     } catch (_) {
       // Falls back to UTC if the platform can't report a timezone.
@@ -86,6 +101,7 @@ class NotificationService {
     String? Function(HabitOverviewHabitRes habit)? todayStatus,
   }) async {
     await init();
+    _ensureZones(habits.map((h) => h.timezone));
     if (isCurrent != null && !isCurrent()) return;
     // Ensure we have permission before scheduling — otherwise iOS silently drops
     // the reminders. Once per run: on Android 13+ with notifications off, every

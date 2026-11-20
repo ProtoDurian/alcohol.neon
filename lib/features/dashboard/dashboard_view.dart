@@ -251,7 +251,7 @@ class _DashboardScaffoldState extends State<_DashboardScaffold>
     return AmbientBackdrop(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        floatingActionButton: c.phase == DashboardPhase.ready
+        floatingActionButton: c.phase == DashboardPhase.ready && !c.stale
             ? _AddButton(onTap: () => _openEditor(context, c))
             : null,
         body: switch (c.phase) {
@@ -309,7 +309,9 @@ class _TodayState extends State<_Today> {
     final now = DateTime.now();
     final nextUp = widget.layout == TodayLayout.nextUp;
 
-    final sections = <Widget>[
+    // Banners stay tappable while a saved Today from an earlier day is
+    // dimmed below them (Retry must work when today's fails to load).
+    final banners = <Widget>[
       if (c.stale)
         const GlassBanner(
           icon: Icons.sync,
@@ -323,7 +325,10 @@ class _TodayState extends State<_Today> {
           body:
               'Saved actions are kept. Totals may be out of date. '
               'Retry refresh — do not submit the action again.',
-          action: GlassTextButton(label: 'Retry', onPressed: c.load),
+          action: GlassTextButton(
+            label: 'Retry',
+            onPressed: () => c.load(quiet: true),
+          ),
         ),
       if (c.actionError != null)
         GlassBanner(
@@ -335,6 +340,9 @@ class _TodayState extends State<_Today> {
             onPressed: c.clearActionError,
           ),
         ),
+    ];
+    final sections = <Widget>[
+      ...banners,
       if (c.habits.isEmpty)
         _EmptyState(onCreate: () => _openEditor(context, c))
       else if (nextUp)
@@ -378,25 +386,20 @@ class _TodayState extends State<_Today> {
         ),
         // One scroll view for every section, so dragging a row to an edge
         // scrolls Today.
-        // A saved Today from an earlier day: dimmed and not tappable until
-        // today's arrives (instead of a full-screen loader).
-        SliverIgnorePointer(
-          ignoring: c.stale,
-          sliver: SliverOpacity(
-            opacity: c.stale ? 0.55 : 1,
-            sliver: SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-              sliver: SliverMainAxisGroup(
-                slivers: [
-                  for (var i = 0; i < sections.length; i++)
-                    sections[i] is _Section
-                        ? Appear(index: i, sliver: true, child: sections[i])
-                        : SliverToBoxAdapter(
-                            child: Appear(index: i, child: sections[i]),
-                          ),
-                ],
-              ),
-            ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+          sliver: SliverMainAxisGroup(
+            slivers: [
+              for (var i = 0; i < sections.length; i++)
+                _dimWhenStale(
+                  c.stale && i >= banners.length,
+                  sections[i] is _Section
+                      ? Appear(index: i, sliver: true, child: sections[i])
+                      : SliverToBoxAdapter(
+                          child: Appear(index: i, child: sections[i]),
+                        ),
+                ),
+            ],
           ),
         ),
       ],
@@ -1549,3 +1552,10 @@ class _ErrorRetry extends StatelessWidget {
     );
   }
 }
+
+/// A saved Today from an earlier day: dimmed and not tappable until today's
+/// arrives (instead of a full-screen loader).
+Widget _dimWhenStale(bool stale, Widget sliver) => SliverIgnorePointer(
+  ignoring: stale,
+  sliver: SliverOpacity(opacity: stale ? 0.55 : 1, sliver: sliver),
+);

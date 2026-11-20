@@ -40,12 +40,22 @@ class SessionCache {
   // One write at a time, app-wide: config and overview are saved about one
   // frame apart on every launch, and two read-change-write passes that
   // overlap each keep only their own half, so the next launch had no Today.
+  // [clear] goes through the same queue, and a write queued before a clear
+  // is dropped, so a sign-out never gets the old account's Today back.
   static Future<void> _queue = Future.value();
+  static int _epoch = 0;
 
-  Future<void> _write(String userId, String key, Object value) {
-    final next = _queue.then((_) => _writeNow(userId, key, value));
+  Future<void> _enqueue(Future<void> Function() job) {
+    final next = _queue.then((_) => job());
     _queue = next;
     return next;
+  }
+
+  Future<void> _write(String userId, String key, Object value) {
+    final epoch = _epoch;
+    return _enqueue(() async {
+      if (epoch == _epoch) await _writeNow(userId, key, value);
+    });
   }
 
   Future<void> _writeNow(String userId, String key, Object value) async {
@@ -55,7 +65,9 @@ class SessionCache {
           ? old
           : <String, dynamic>{'userId': userId};
       m[key] = value;
-      if (key == 'overview') m['savedAt'] = DateTime.now().toIso8601String();
+      if (key == 'overview') {
+        m['savedAt'] = DateTime.now().toUtc().toIso8601String();
+      }
       // Write a new file and swap it in, so a reader never sees half a file.
       final f = await _file();
       final tmp = File('${f.path}.tmp');
@@ -99,10 +111,13 @@ class SessionCache {
       _write(userId, 'overview', overview);
 
   /// Called on sign-out so the next account starts clean.
-  Future<void> clear() async {
-    try {
-      final f = await _file();
-      if (await f.exists()) await f.delete();
-    } catch (_) {}
+  Future<void> clear() {
+    _epoch++;
+    return _enqueue(() async {
+      try {
+        final f = await _file();
+        if (await f.exists()) await f.delete();
+      } catch (_) {}
+    });
   }
 }

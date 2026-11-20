@@ -136,6 +136,7 @@ class AuthService extends ChangeNotifier {
     // Flip local state first so the shell swap (and the navigator pop it
     // triggers) never stalls behind the network — the Logto revocation is
     // best-effort cleanup and may hang on a dead connection.
+    _endTokenSession();
     _status = AuthStatus.unauthenticated;
     notifyListeners();
     try {
@@ -170,18 +171,37 @@ class AuthService extends ChangeNotifier {
   /// `getAccessToken` throws. Unhandled, that throw killed the session
   /// bootstrap mid-flight and froze the app on the loader.
   Future<String?> zincAccessToken() {
+    if (_status != AuthStatus.authenticated) return Future.value(null);
     // One refresh at a time: on resume or launch with an expired token the
     // dashboard, the freeze balance, the inbox bell and the widget push all
     // ask at once, and logto_dart_sdk refreshes once per caller (each one
-    // spending the same rotating refresh token). Share the one in flight.
-    return _tokenInFlight ??= _zincAccessToken().whenComplete(
-      () => _tokenInFlight = null,
-    );
+    // spending the same rotating refresh token). Share the one in flight,
+    // but never across a sign-out: a token minted for the old session is
+    // dropped.
+    final session = _tokenSession;
+    var flight = _tokenInFlight;
+    if (flight == null) {
+      late final Future<String?> started;
+      started = _zincAccessToken(session).whenComplete(() {
+        if (identical(_tokenInFlight, started)) _tokenInFlight = null;
+      });
+      flight = _tokenInFlight = started;
+    }
+    return flight.then((t) => session == _tokenSession ? t : null);
   }
 
   Future<String?>? _tokenInFlight;
 
-  Future<String?> _zincAccessToken() async {
+  /// Bumped when the signed-in session ends, so token work started before
+  /// it neither reaches nor signs out whoever signs in next.
+  int _tokenSession = 0;
+
+  void _endTokenSession() {
+    _tokenSession++;
+    _tokenInFlight = null;
+  }
+
+  Future<String?> _zincAccessToken(int session) async {
     if (_status != AuthStatus.authenticated) return null;
     if (config.zincResource.isEmpty) return null;
     try {
@@ -193,11 +213,13 @@ class AuthService extends ChangeNotifier {
           .timeout(tokenTimeout);
       return token?.token;
     } catch (e) {
+      if (session != _tokenSession) return null;
       if (_isDeadSessionError(e)) {
         // The session is dead (revoked/expired grant). Flip to signed-out
         // FIRST (UI must never wait on network cleanup), then clear the stale
         // keychain tokens best-effort. RootView swaps to SignInView on the
         // notify, so the user lands on sign-in instead of a frozen loader.
+        _endTokenSession();
         _status = AuthStatus.unauthenticated;
         notifyListeners();
         try {

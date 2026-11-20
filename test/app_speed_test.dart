@@ -27,6 +27,32 @@ import 'package:provider/provider.dart';
 
 import 'support/session_harness.dart';
 
+/// A signed-in Logto client whose token arrives when [gate] completes.
+class _GatedLogto extends LogtoClient {
+  _GatedLogto()
+    : super(
+        config: const LogtoConfig(endpoint: 'https://l.test', appId: 'a'),
+      );
+  final gate = Completer<void>();
+  @override
+  Future<bool> get isAuthenticated async => true;
+  @override
+  Future<AccessToken?> getAccessToken({
+    String? resource,
+    String? organizationId,
+  }) async {
+    await gate.future;
+    return AccessToken(
+      token: 'token-of-the-old-session',
+      scope: '',
+      expiresAt: DateTime.now().add(const Duration(hours: 1)),
+    );
+  }
+
+  @override
+  Future<void> signOut(String redirectUri) async {}
+}
+
 /// A signed-in Logto client whose access token is expired: every
 /// `getAccessToken` that reaches it is one refresh with Logto.
 class _ExpiredTokenLogto extends LogtoClient {
@@ -86,10 +112,15 @@ void main() {
   /// zinc with the overview held while [hold] is set.
   Completer<void>? hold;
   var overviews = 0;
+  var failOverviews = 0;
   Future<http.Response?> respond(http.Request r) async {
     if (r.url.path.endsWith('/overview')) {
       overviews++;
       await hold?.future;
+      if (failOverviews > 0) {
+        failOverviews--;
+        return jsonResponse({'title': 'Down', 'status': 503}, 503);
+      }
     }
     return null;
   }
@@ -226,6 +257,50 @@ void main() {
       await done(tester, h);
     });
 
+    testWidgets('Retry stays tappable and quiet when today\'s fails', (
+      tester,
+    ) async {
+      hold = null;
+      overviews = 0;
+      failOverviews = 1;
+      final h = SessionHarness(respond: respond);
+      h.cache.snapshot = yesterday();
+      await h.start();
+      tester.view.physicalSize = const Size(390, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<SessionController>.value(
+          value: h.session,
+          child: MaterialApp(
+            theme: AppTheme.light,
+            navigatorObservers: [routeObserver],
+            home: const DashboardView(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Could not refresh the dashboard'), findsOneWidget);
+      expect(find.text('Updating Today…'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((w) => w.runtimeType.toString() == '_AddButton'),
+        findsNothing,
+        reason: 'no new habit on yesterday\'s list',
+      );
+      final before = overviews;
+      hold = Completer();
+      await tester.tap(find.text('Retry'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(overviews, before + 1);
+      expectTodayShown();
+      hold!.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Updating Today…'), findsNothing);
+      expect(find.text('Could not refresh the dashboard'), findsNothing);
+      await done(tester, h);
+    });
+
     test('cannot be completed until today\'s arrives', () async {
       hold = null;
       final h = SessionHarness(respond: respond);
@@ -272,9 +347,42 @@ void main() {
         expect(await cache.load('u1'), isNotNull, reason: 'run $i');
       }
     });
+
+    test('a sign-out clear wins over saves queued before it', () async {
+      final cache = SessionCache(dir: () async => dir);
+      final saves = [
+        cache.saveConfig('u1', _config),
+        cache.saveOverview('u1', _overview()),
+      ];
+      await cache.clear();
+      await Future.wait(saves);
+      expect(await cache.load('u1'), isNull);
+    });
+
+    test('saves its time in UTC', () async {
+      final cache = SessionCache(dir: () async => dir);
+      await cache.saveConfig('u1', _config);
+      await cache.saveOverview('u1', _overview());
+      final raw = await File('${dir.path}/session_cache.json').readAsString();
+      expect(RegExp(r'"savedAt":"[^"]+Z"').hasMatch(raw), isTrue);
+    });
   });
 
   group('one token refresh', () {
+    test('a token started before sign-out never reaches anyone', () async {
+      final logto = _GatedLogto();
+      final auth = AuthService(AppConfig.current, client: logto);
+      await pumpEventQueue();
+      expect(auth.status, AuthStatus.authenticated);
+      final early = auth.zincAccessToken();
+      await pumpEventQueue();
+      await auth.signOut();
+      final late = auth.zincAccessToken();
+      logto.gate.complete();
+      expect(await early, isNull);
+      expect(await late, isNull);
+    });
+
     test('4 callers at once share one refresh with Logto', () async {
       final logto = _ExpiredTokenLogto();
       final auth = AuthService(AppConfig.current, client: logto);
