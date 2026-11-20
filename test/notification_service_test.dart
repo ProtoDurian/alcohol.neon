@@ -198,4 +198,36 @@ void main() {
       }
     },
   );
+
+  test(
+    'asks for permission once per run, not after every Today load',
+    () async {
+      final now = DateTime.utc(2026, 4, 27, 12);
+      final service = NotificationService(now: () => now);
+      await withClock(Clock.fixed(now), () async {
+        await service.syncHabits([habit()]);
+        await service.syncHabits([habit()]);
+        await service.syncHabits([habit()]);
+      });
+      expect(
+        calls.where((c) => c.method == 'requestPermissions'),
+        hasLength(1),
+      );
+      expect(schedules(), isNotEmpty, reason: 'reminders still planned');
+    },
+  );
+
+  test(
+    'old alias zones still get reminders (full set loaded on demand)',
+    () async {
+      for (final zone in ['Asia/Calcutta', 'Europe/Kiev']) {
+        calls = [];
+        await syncAt(DateTime.utc(2026, 4, 27, 12), [
+          habit(timezone: zone, day: 2),
+        ]);
+        expect(schedules(), isNotEmpty, reason: zone);
+        expect(schedules().first['timeZoneName'], zone);
+      }
+    },
+  );
 }

@@ -43,7 +43,7 @@ Future<void> _openEditor(
                 HabitEditorView(habitId: habitId, initialEnabled: enabled),
           ),
         );
-  if (changed == true) c.load();
+  if (changed == true) c.load(quiet: true);
 }
 
 void _openHabit(BuildContext context, DashboardController c, TodayItem item) {
@@ -203,8 +203,10 @@ class _DashboardScaffoldState extends State<_DashboardScaffold>
   @override
   void didPopNext() {
     // Includes a warm NFC link: no app-resume event is required on return.
+    // Quiet: Today stays on screen while it refreshes (a loud load swapped
+    // it for the full-screen loader after every screen, sheet or dialog).
     if (!mounted) return;
-    context.read<DashboardController>().load();
+    context.read<DashboardController>().load(quiet: true);
     context.read<BuffersController>().load();
   }
 
@@ -233,9 +235,17 @@ class _DashboardScaffoldState extends State<_DashboardScaffold>
   /// timezone.
   Future<void> _onResumed() async {
     final dashboard = context.read<DashboardController>();
+    // Idle connections may have died in the background: start a new pool,
+    // and open a connection now, while the calls below wait for the token
+    // (a Logto refresh when it is over an hour old), so they skip the
+    // TCP + TLS handshake.
+    final api = context.read<SessionController>().auth.makeApiClient()
+      ..resetConnections();
+    unawaited(api.warmUp());
     context.read<BuffersController>().load();
     await context.read<SessionController>().syncDeviceTimezone();
-    if (mounted) dashboard.load();
+    // Quiet: Today stays on screen while it refreshes.
+    if (mounted) dashboard.load(quiet: true);
   }
 
   @override
@@ -244,7 +254,7 @@ class _DashboardScaffoldState extends State<_DashboardScaffold>
     return AmbientBackdrop(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        floatingActionButton: c.phase == DashboardPhase.ready
+        floatingActionButton: c.phase == DashboardPhase.ready && !c.stale
             ? _AddButton(onTap: () => _openEditor(context, c))
             : null,
         body: switch (c.phase) {
@@ -302,7 +312,15 @@ class _TodayState extends State<_Today> {
     final now = DateTime.now();
     final nextUp = widget.layout == TodayLayout.nextUp;
 
-    final sections = <Widget>[
+    // Banners stay tappable while a saved Today from an earlier day is
+    // dimmed below them (Retry must work when today's fails to load).
+    final banners = <Widget>[
+      if (c.stale)
+        const GlassBanner(
+          icon: Icons.sync,
+          title: 'Updating Today…',
+          body: "Showing your last saved list until today's loads.",
+        ),
       if (c.refreshError != null)
         GlassBanner(
           icon: Icons.sync_problem,
@@ -310,7 +328,10 @@ class _TodayState extends State<_Today> {
           body:
               'Saved actions are kept. Totals may be out of date. '
               'Retry refresh — do not submit the action again.',
-          action: GlassTextButton(label: 'Retry', onPressed: c.load),
+          action: GlassTextButton(
+            label: 'Retry',
+            onPressed: () => c.load(quiet: true),
+          ),
         ),
       if (c.actionError != null)
         GlassBanner(
@@ -322,6 +343,9 @@ class _TodayState extends State<_Today> {
             onPressed: c.clearActionError,
           ),
         ),
+    ];
+    final sections = <Widget>[
+      ...banners,
       if (c.habits.isEmpty)
         _EmptyState(onCreate: () => _openEditor(context, c))
       else if (nextUp)
@@ -361,7 +385,7 @@ class _TodayState extends State<_Today> {
         ),
         // Pull-to-refresh reloads both the overview and the freeze balance.
         CupertinoSliverRefreshControl(
-          onRefresh: () => Future.wait([c.load(), buffers.load()]),
+          onRefresh: () => Future.wait([c.load(quiet: true), buffers.load()]),
         ),
         // One scroll view for every section, so dragging a row to an edge
         // scrolls Today.
@@ -370,11 +394,14 @@ class _TodayState extends State<_Today> {
           sliver: SliverMainAxisGroup(
             slivers: [
               for (var i = 0; i < sections.length; i++)
-                sections[i] is _Section
-                    ? Appear(index: i, sliver: true, child: sections[i])
-                    : SliverToBoxAdapter(
-                        child: Appear(index: i, child: sections[i]),
-                      ),
+                _dimWhenStale(
+                  c.stale && i >= banners.length,
+                  sections[i] is _Section
+                      ? Appear(index: i, sliver: true, child: sections[i])
+                      : SliverToBoxAdapter(
+                          child: Appear(index: i, child: sections[i]),
+                        ),
+                ),
             ],
           ),
         ),
@@ -1528,3 +1555,10 @@ class _ErrorRetry extends StatelessWidget {
     );
   }
 }
+
+/// A saved Today from an earlier day: dimmed and not tappable until today's
+/// arrives (instead of a full-screen loader).
+Widget _dimWhenStale(bool stale, Widget sliver) => SliverIgnorePointer(
+  ignoring: stale,
+  sliver: SliverOpacity(opacity: stale ? 0.55 : 1, sliver: sliver),
+);

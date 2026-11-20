@@ -103,6 +103,7 @@ class SessionController extends ChangeNotifier {
     _timezoneNotice = null;
     _consent = null;
     _timezoneSync = null;
+    _cachedStale = false;
     _cachedOverview = null;
     _overviewPrefetch = null;
     _error = null;
@@ -141,6 +142,11 @@ class SessionController extends ChangeNotifier {
   Future<bool>? _timezoneSync;
   String? _timezoneNotice;
   HabitOverviewResponse? _cachedOverview;
+  bool _cachedStale = false;
+
+  /// Whether the saved Today is from an earlier day than today (shown dimmed
+  /// until the fresh one lands; statuses may be yesterday's).
+  bool get cachedOverviewStale => _cachedStale;
   Future<Result<HabitOverviewResponse>>? _overviewPrefetch;
 
   /// Today's overview from the last launch (same day), taken once by the
@@ -211,6 +217,10 @@ class SessionController extends ChangeNotifier {
       if (snapshot != null) {
         _config = snapshot.config;
         _cachedOverview = snapshot.overview;
+        final now = DateTime.now();
+        final at = snapshot.savedAt;
+        _cachedStale =
+            at.year != now.year || at.month != now.month || at.day != now.day;
         LaunchTimeline.mark('bootstrap-cached');
         _setPhase(SessionPhase.ready);
       }

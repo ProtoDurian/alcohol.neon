@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:alcohol_neon/auth/auth_service.dart';
 import 'package:alcohol_neon/features/dashboard/dashboard_controller.dart';
+import 'package:alcohol_neon/services/notification_service.dart';
 import 'package:alcohol_neon/services/widget_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -217,6 +218,7 @@ void main() {
           await release.future;
         }
       };
+      NotificationService.instance.resetPermissionAsk();
       notifications.clear();
       final c = DashboardController(h.session);
       await c.load();

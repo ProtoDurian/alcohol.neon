@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:http/http.dart' as http;
@@ -86,6 +88,8 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> signIn() async {
+    // Let the last sign-out finish clearing the SDK's token storage first.
+    await _settle(_signOutWork);
     try {
       await _client.signIn(config.redirectUri);
       _status = (await _client.isAuthenticated)
@@ -136,13 +140,32 @@ class AuthService extends ChangeNotifier {
     // Flip local state first so the shell swap (and the navigator pop it
     // triggers) never stalls behind the network — the Logto revocation is
     // best-effort cleanup and may hang on a dead connection.
+    _endTokenSession();
     _status = AuthStatus.unauthenticated;
     notifyListeners();
+    await (_signOutWork = _clearSdkSession());
+  }
+
+  Future<void>? _signOutWork;
+
+  Future<void> _clearSdkSession() async {
+    // A token refresh still in flight writes the SDK's token storage when it
+    // lands; let it land first, so the clear below wipes it and the next
+    // account never inherits it.
+    await _settle(Future.wait(_sdkTokenWork.toList()));
     try {
       await _client.signOut(config.redirectUri);
     } catch (_) {
       // Best-effort; we're already signed out locally.
     }
+  }
+
+  /// Waits for [work] to end, at most [tokenTimeout]; never throws.
+  static Future<void> _settle(Future<Object?>? work) async {
+    if (work == null) return;
+    try {
+      await work.timeout(tokenTimeout);
+    } catch (_) {}
   }
 
   /// ID-token claims (available offline once signed in).
@@ -169,23 +192,65 @@ class AuthService extends ChangeNotifier {
   /// hard proof is the SDK's refresh attempt here — Logto answers 400 and
   /// `getAccessToken` throws. Unhandled, that throw killed the session
   /// bootstrap mid-flight and froze the app on the loader.
-  Future<String?> zincAccessToken() async {
+  Future<String?> zincAccessToken() {
+    if (_status != AuthStatus.authenticated) return Future.value(null);
+    // One refresh at a time: on resume or launch with an expired token the
+    // dashboard, the freeze balance, the inbox bell and the widget push all
+    // ask at once, and logto_dart_sdk refreshes once per caller (each one
+    // spending the same rotating refresh token). Share the one in flight,
+    // but never across a sign-out: a token minted for the old session is
+    // dropped.
+    final session = _tokenSession;
+    var flight = _tokenInFlight;
+    if (flight == null) {
+      late final Future<String?> started;
+      started = _zincAccessToken(session).whenComplete(() {
+        if (identical(_tokenInFlight, started)) _tokenInFlight = null;
+      });
+      flight = _tokenInFlight = started;
+    }
+    return flight.then((t) => session == _tokenSession ? t : null);
+  }
+
+  Future<String?>? _tokenInFlight;
+
+  /// The SDK's own token requests still running (a timeout does not cancel
+  /// one, so after a timeout a second can start beside it).
+  final _sdkTokenWork = <Future<AccessToken?>>{};
+
+  /// Bumped when the signed-in session ends, so token work started before
+  /// it neither reaches nor signs out whoever signs in next.
+  int _tokenSession = 0;
+
+  void _endTokenSession() {
+    _tokenSession++;
+    _tokenInFlight = null;
+  }
+
+  Future<String?> _zincAccessToken(int session) async {
     if (_status != AuthStatus.authenticated) return null;
     if (config.zincResource.isEmpty) return null;
     try {
       if (!await _client.isAuthenticated) return null;
       // The SDK's refresh has no timeout of its own; a stalled one would
       // hold every zinc request (and the launch loader) forever.
-      final token = await _client
-          .getAccessToken(resource: config.zincResource)
-          .timeout(tokenTimeout);
+      final work = _client.getAccessToken(resource: config.zincResource);
+      _sdkTokenWork.add(work);
+      unawaited(
+        work
+            .then<void>((_) {}, onError: (_) {})
+            .whenComplete(() => _sdkTokenWork.remove(work)),
+      );
+      final token = await work.timeout(tokenTimeout);
       return token?.token;
     } catch (e) {
+      if (session != _tokenSession) return null;
       if (_isDeadSessionError(e)) {
         // The session is dead (revoked/expired grant). Flip to signed-out
         // FIRST (UI must never wait on network cleanup), then clear the stale
         // keychain tokens best-effort. RootView swaps to SignInView on the
         // notify, so the user lands on sign-in instead of a frozen loader.
+        _endTokenSession();
         _status = AuthStatus.unauthenticated;
         notifyListeners();
         try {
@@ -223,7 +288,14 @@ class AuthService extends ChangeNotifier {
     return false;
   }
 
-  /// An ApiClient pre-wired with this user's token provider.
-  ApiClient makeApiClient() =>
-      ApiClient(baseUrl: config.zincBaseUrl, tokenProvider: zincAccessToken);
+  /// An ApiClient pre-wired with this user's token provider. Every caller
+  /// gets the same one, so all zinc calls share one pool of kept-alive
+  /// connections (a screen that built its own client opened its own new
+  /// connection: 3 round trips to Singapore instead of 1).
+  ApiClient makeApiClient() => _api;
+
+  late final ApiClient _api = ApiClient(
+    baseUrl: config.zincBaseUrl,
+    tokenProvider: zincAccessToken,
+  );
 }
