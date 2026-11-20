@@ -1,3 +1,17 @@
+## [1.30.1](https://github.com/ProtoDurian/alcohol.neon/compare/v1.30.0...v1.30.1) (2026-11-20)
+
+
+### 🐛 Bug Fixes 🐛
+
+* drop dead connections on resume; let token work land on sign-out ([df71fd1](https://github.com/ProtoDurian/alcohol.neon/commit/df71fd121b6fd31f556b3d12887393677306841e))
+* keep the speed changes safe across sign-out and old zones ([ab9ae8f](https://github.com/ProtoDurian/alcohol.neon/commit/ab9ae8f2d59c49ebd302bd98537e2861e2fe7a53))
+* wait for every token refresh; keep the old pool open on resume ([42830d0](https://github.com/ProtoDurian/alcohol.neon/commit/42830d01a714007d14367fa70eb3632ba4be452d))
+
+
+### 🚀 Performance Improvement 🚀
+
+* keep Today on screen and reuse warm zinc connections ([b598d12](https://github.com/ProtoDurian/alcohol.neon/commit/b598d125b46e80c9bf46f057b41c90d02e16a8ab))
+
 ## [1.30.0](https://github.com/ProtoDurian/alcohol.neon/compare/v1.29.1...v1.30.0) (2026-11-13)
 
 
