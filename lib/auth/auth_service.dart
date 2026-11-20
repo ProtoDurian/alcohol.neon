@@ -86,6 +86,8 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> signIn() async {
+    // Let the last sign-out finish clearing the SDK's token storage first.
+    await _settle(_signOutWork);
     try {
       await _client.signIn(config.redirectUri);
       _status = (await _client.isAuthenticated)
@@ -139,11 +141,29 @@ class AuthService extends ChangeNotifier {
     _endTokenSession();
     _status = AuthStatus.unauthenticated;
     notifyListeners();
+    await (_signOutWork = _clearSdkSession());
+  }
+
+  Future<void>? _signOutWork;
+
+  Future<void> _clearSdkSession() async {
+    // A token refresh still in flight writes the SDK's token storage when it
+    // lands; let it land first, so the clear below wipes it and the next
+    // account never inherits it.
+    await _settle(_sdkTokenWork);
     try {
       await _client.signOut(config.redirectUri);
     } catch (_) {
       // Best-effort; we're already signed out locally.
     }
+  }
+
+  /// Waits for [work] to end, at most [tokenTimeout]; never throws.
+  static Future<void> _settle(Future<Object?>? work) async {
+    if (work == null) return;
+    try {
+      await work.timeout(tokenTimeout);
+    } catch (_) {}
   }
 
   /// ID-token claims (available offline once signed in).
@@ -192,6 +212,9 @@ class AuthService extends ChangeNotifier {
 
   Future<String?>? _tokenInFlight;
 
+  /// The SDK's own token request, which a timeout does not cancel.
+  Future<AccessToken?>? _sdkTokenWork;
+
   /// Bumped when the signed-in session ends, so token work started before
   /// it neither reaches nor signs out whoever signs in next.
   int _tokenSession = 0;
@@ -208,9 +231,10 @@ class AuthService extends ChangeNotifier {
       if (!await _client.isAuthenticated) return null;
       // The SDK's refresh has no timeout of its own; a stalled one would
       // hold every zinc request (and the launch loader) forever.
-      final token = await _client
-          .getAccessToken(resource: config.zincResource)
-          .timeout(tokenTimeout);
+      final work = _sdkTokenWork = _client.getAccessToken(
+        resource: config.zincResource,
+      );
+      final token = await work.timeout(tokenTimeout);
       return token?.token;
     } catch (e) {
       if (session != _tokenSession) return null;

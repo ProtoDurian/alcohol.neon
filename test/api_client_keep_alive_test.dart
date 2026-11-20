@@ -13,14 +13,19 @@ void main() {
     late HttpServer server;
     late Uri base;
     final ports = <int>[];
+    // Connections the server stops answering on (dead after the background).
+    final dead = <int>{};
 
     setUp(() async {
       ports.clear();
+      dead.clear();
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       base = Uri.parse('http://127.0.0.1:${server.port}');
       server.listen((r) {
         // The client's port tells which connection the request came on.
-        ports.add(r.connectionInfo!.remotePort);
+        final port = r.connectionInfo!.remotePort;
+        ports.add(port);
+        if (dead.contains(port)) return; // never answers
         r.response
           ..headers.contentType = ContentType.json
           ..write('{"ok":true}')
@@ -60,6 +65,18 @@ void main() {
       expect(ports.toSet(), hasLength(2));
       a.close();
       b.close();
+    });
+
+    test('after resetConnections, a dead idle socket is not reused', () async {
+      final own = ApiClient(baseUrl: base, tokenProvider: () async => 'token');
+      await own.get('/x', (j) => j);
+      dead.addAll(ports);
+      own.resetConnections();
+      final r = await own
+          .get('/x', (j) => j)
+          .timeout(const Duration(seconds: 5));
+      expect(r, isA<Ok<dynamic>>());
+      expect(ports.toSet(), hasLength(2));
     });
 
     test('warmUp opens the connection the next call reuses', () async {

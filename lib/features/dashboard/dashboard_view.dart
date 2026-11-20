@@ -235,10 +235,13 @@ class _DashboardScaffoldState extends State<_DashboardScaffold>
   /// timezone.
   Future<void> _onResumed() async {
     final dashboard = context.read<DashboardController>();
-    // Open a zinc connection now, while the calls below wait for the token
-    // (a Logto refresh when it is over an hour old): they then skip the
+    // Idle connections may have died in the background: start a new pool,
+    // and open a connection now, while the calls below wait for the token
+    // (a Logto refresh when it is over an hour old), so they skip the
     // TCP + TLS handshake.
-    unawaited(context.read<SessionController>().auth.makeApiClient().warmUp());
+    final api = context.read<SessionController>().auth.makeApiClient()
+      ..resetConnections();
+    unawaited(api.warmUp());
     context.read<BuffersController>().load();
     await context.read<SessionController>().syncDeviceTimezone();
     // Quiet: Today stays on screen while it refreshes.

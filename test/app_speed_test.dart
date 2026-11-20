@@ -34,6 +34,7 @@ class _GatedLogto extends LogtoClient {
         config: const LogtoConfig(endpoint: 'https://l.test', appId: 'a'),
       );
   final gate = Completer<void>();
+  final events = <String>[];
   @override
   Future<bool> get isAuthenticated async => true;
   @override
@@ -42,6 +43,7 @@ class _GatedLogto extends LogtoClient {
     String? organizationId,
   }) async {
     await gate.future;
+    events.add('refresh-landed');
     return AccessToken(
       token: 'token-of-the-old-session',
       scope: '',
@@ -50,7 +52,7 @@ class _GatedLogto extends LogtoClient {
   }
 
   @override
-  Future<void> signOut(String redirectUri) async {}
+  Future<void> signOut(String redirectUri) async => events.add('cleared');
 }
 
 /// A signed-in Logto client whose access token is expired: every
@@ -376,11 +378,16 @@ void main() {
       expect(auth.status, AuthStatus.authenticated);
       final early = auth.zincAccessToken();
       await pumpEventQueue();
-      await auth.signOut();
+      final out = auth.signOut();
       final late = auth.zincAccessToken();
+      await pumpEventQueue();
+      expect(logto.events, isEmpty, reason: 'the clear waits for the refresh');
       logto.gate.complete();
+      await out;
       expect(await early, isNull);
       expect(await late, isNull);
+      // The refresh's writes land before the clear, so the clear wipes them.
+      expect(logto.events, ['refresh-landed', 'cleared']);
     });
 
     test('4 callers at once share one refresh with Logto', () async {

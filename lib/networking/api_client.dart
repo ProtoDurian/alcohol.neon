@@ -15,7 +15,10 @@ import '../core/problem.dart';
 class ApiClient {
   final Uri baseUrl;
   final Future<String?> Function() tokenProvider;
-  final http.Client _client;
+  late http.Client _client;
+
+  /// The dart:io pool under [_client] when this client made its own.
+  HttpClient? _io;
 
   /// How long a request may take before it fails as a network error. Without
   /// it a stalled connection (captive Wi-Fi, a dropped mobile link) never
@@ -43,7 +46,26 @@ class ApiClient {
     required this.baseUrl,
     required this.tokenProvider,
     http.Client? client,
-  }) : _client = client ?? keepAliveClient();
+  }) {
+    if (client != null) {
+      _client = client;
+    } else {
+      final io = _io = keepAliveHttpClient();
+      _client = IOClient(io);
+    }
+  }
+
+  /// Drops kept-alive connections that sat idle and starts a new pool. Call
+  /// on resume: after the phone was in the background its idle sockets may
+  /// be dead without a close, and a call on one waits for [timeout]. Calls
+  /// already in flight finish on their own connection.
+  void resetConnections() {
+    final old = _io;
+    if (old == null) return;
+    final io = _io = keepAliveHttpClient();
+    _client = IOClient(io);
+    old.close();
+  }
 
   /// Opens a connection to zinc ahead of the real calls (an unauthenticated
   /// GET of the root info, no database). Called on resume: the first real
