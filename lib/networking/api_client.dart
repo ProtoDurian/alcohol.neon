@@ -55,16 +55,15 @@ class ApiClient {
     }
   }
 
-  /// Drops kept-alive connections that sat idle and starts a new pool. Call
-  /// on resume: after the phone was in the background its idle sockets may
-  /// be dead without a close, and a call on one waits for [timeout]. Calls
-  /// already in flight finish on their own connection.
+  /// Starts a new connection pool, so later calls never pick an idle socket
+  /// from before. Call on resume: after the phone was in the background
+  /// those may be dead without a close, and a call on one waits for
+  /// [timeout]. The old pool is not closed (closing cancels a call still
+  /// connecting); its idle sockets close themselves after [keepIdle].
   void resetConnections() {
-    final old = _io;
-    if (old == null) return;
+    if (_io == null) return;
     final io = _io = keepAliveHttpClient();
     _client = IOClient(io);
-    old.close();
   }
 
   /// Opens a connection to zinc ahead of the real calls (an unauthenticated

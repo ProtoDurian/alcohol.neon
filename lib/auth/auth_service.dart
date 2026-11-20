@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:http/http.dart' as http;
@@ -150,7 +152,7 @@ class AuthService extends ChangeNotifier {
     // A token refresh still in flight writes the SDK's token storage when it
     // lands; let it land first, so the clear below wipes it and the next
     // account never inherits it.
-    await _settle(_sdkTokenWork);
+    await _settle(Future.wait(_sdkTokenWork.toList()));
     try {
       await _client.signOut(config.redirectUri);
     } catch (_) {
@@ -212,8 +214,9 @@ class AuthService extends ChangeNotifier {
 
   Future<String?>? _tokenInFlight;
 
-  /// The SDK's own token request, which a timeout does not cancel.
-  Future<AccessToken?>? _sdkTokenWork;
+  /// The SDK's own token requests still running (a timeout does not cancel
+  /// one, so after a timeout a second can start beside it).
+  final _sdkTokenWork = <Future<AccessToken?>>{};
 
   /// Bumped when the signed-in session ends, so token work started before
   /// it neither reaches nor signs out whoever signs in next.
@@ -231,8 +234,12 @@ class AuthService extends ChangeNotifier {
       if (!await _client.isAuthenticated) return null;
       // The SDK's refresh has no timeout of its own; a stalled one would
       // hold every zinc request (and the launch loader) forever.
-      final work = _sdkTokenWork = _client.getAccessToken(
-        resource: config.zincResource,
+      final work = _client.getAccessToken(resource: config.zincResource);
+      _sdkTokenWork.add(work);
+      unawaited(
+        work
+            .then<void>((_) {}, onError: (_) {})
+            .whenComplete(() => _sdkTokenWork.remove(work)),
       );
       final token = await work.timeout(tokenTimeout);
       return token?.token;

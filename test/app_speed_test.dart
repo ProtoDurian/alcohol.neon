@@ -27,6 +27,32 @@ import 'package:provider/provider.dart';
 
 import 'support/session_harness.dart';
 
+/// Like [_GatedLogto], with one gate per token request.
+class _ManyGatesLogto extends LogtoClient {
+  _ManyGatesLogto()
+    : super(
+        config: const LogtoConfig(endpoint: 'https://l.test', appId: 'a'),
+      );
+  final gates = <Completer<void>>[];
+  final events = <String>[];
+  @override
+  Future<bool> get isAuthenticated async => true;
+  @override
+  Future<AccessToken?> getAccessToken({
+    String? resource,
+    String? organizationId,
+  }) async {
+    final gate = Completer<void>();
+    gates.add(gate);
+    await gate.future;
+    events.add('refresh-landed');
+    return null;
+  }
+
+  @override
+  Future<void> signOut(String redirectUri) async => events.add('cleared');
+}
+
 /// A signed-in Logto client whose token arrives when [gate] completes.
 class _GatedLogto extends LogtoClient {
   _GatedLogto()
@@ -400,6 +426,29 @@ void main() {
       // Once settled, the next ask starts a new request.
       await auth.zincAccessToken();
       expect(logto.refreshes, 2);
+    });
+
+    testWidgets('sign-out waits for every SDK refresh still running', (
+      tester,
+    ) async {
+      final logto = _ManyGatesLogto();
+      final auth = AuthService(AppConfig.current, client: logto);
+      await tester.pump();
+      final first = auth.zincAccessToken();
+      await tester.pump(AuthService.tokenTimeout + const Duration(seconds: 1));
+      expect(await first, isNull, reason: 'timed out; the SDK keeps going');
+      unawaited(auth.zincAccessToken());
+      await tester.pump();
+      expect(logto.gates, hasLength(2));
+      logto.gates[1].complete();
+      await tester.pump();
+      final out = auth.signOut();
+      await tester.pump();
+      expect(logto.events, ['refresh-landed'], reason: 'first still running');
+      logto.gates[0].complete();
+      await tester.pump();
+      await out;
+      expect(logto.events, ['refresh-landed', 'refresh-landed', 'cleared']);
     });
 
     test('every caller gets the same zinc client', () async {
