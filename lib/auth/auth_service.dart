@@ -169,7 +169,19 @@ class AuthService extends ChangeNotifier {
   /// hard proof is the SDK's refresh attempt here — Logto answers 400 and
   /// `getAccessToken` throws. Unhandled, that throw killed the session
   /// bootstrap mid-flight and froze the app on the loader.
-  Future<String?> zincAccessToken() async {
+  Future<String?> zincAccessToken() {
+    // One refresh at a time: on resume or launch with an expired token the
+    // dashboard, the freeze balance, the inbox bell and the widget push all
+    // ask at once, and logto_dart_sdk refreshes once per caller (each one
+    // spending the same rotating refresh token). Share the one in flight.
+    return _tokenInFlight ??= _zincAccessToken().whenComplete(
+      () => _tokenInFlight = null,
+    );
+  }
+
+  Future<String?>? _tokenInFlight;
+
+  Future<String?> _zincAccessToken() async {
     if (_status != AuthStatus.authenticated) return null;
     if (config.zincResource.isEmpty) return null;
     try {
@@ -223,7 +235,14 @@ class AuthService extends ChangeNotifier {
     return false;
   }
 
-  /// An ApiClient pre-wired with this user's token provider.
-  ApiClient makeApiClient() =>
-      ApiClient(baseUrl: config.zincBaseUrl, tokenProvider: zincAccessToken);
+  /// An ApiClient pre-wired with this user's token provider. Every caller
+  /// gets the same one, so all zinc calls share one pool of kept-alive
+  /// connections (a screen that built its own client opened its own new
+  /// connection: 3 round trips to Singapore instead of 1).
+  ApiClient makeApiClient() => _api;
+
+  late final ApiClient _api = ApiClient(
+    baseUrl: config.zincBaseUrl,
+    tokenProvider: zincAccessToken,
+  );
 }

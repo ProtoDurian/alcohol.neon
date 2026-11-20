@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 
 import '../core/launch_timeline.dart';
 
@@ -19,11 +22,41 @@ class ApiClient {
   /// completes, and a screen waiting on it shows its loader forever.
   static const timeout = Duration(seconds: 20);
 
+  /// How long an idle connection to zinc is kept for reuse. Dart's default
+  /// is 15 s, so a call 15 s after the last one paid a new TCP + TLS
+  /// handshake (3 round trips to Singapore instead of 1). The load balancer
+  /// closes idle connections after 75 s; staying under it avoids reusing a
+  /// socket the server is closing at that moment.
+  static const keepIdle = Duration(seconds: 70);
+
+  /// The HTTP client zinc calls go through: one connection pool kept
+  /// [keepIdle]. Share one per app (see [AuthService.makeApiClient]) so every
+  /// caller reuses the same warm connections.
+  static http.Client keepAliveClient() => IOClient(keepAliveHttpClient());
+
+  /// The dart:io client under [keepAliveClient].
+  @visibleForTesting
+  static HttpClient keepAliveHttpClient() =>
+      HttpClient()..idleTimeout = keepIdle;
+
   ApiClient({
     required this.baseUrl,
     required this.tokenProvider,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? keepAliveClient();
+
+  /// Opens a connection to zinc ahead of the real calls (an unauthenticated
+  /// GET of the root info, no database). Called on resume: the first real
+  /// calls wait for the token (a Logto refresh when it is over an hour old),
+  /// and meanwhile this pays the TCP + TLS handshake, so they find a warm
+  /// connection. Best-effort; never fails.
+  Future<void> warmUp() async {
+    try {
+      await _client.get(baseUrl.resolve('/')).timeout(timeout);
+    } catch (_) {
+      // Only costs the next call its warm connection.
+    }
+  }
 
   Future<Result<T>> get<T>(
     String path,
@@ -119,16 +152,28 @@ class ApiClient {
         : (hasBodyVerb ? '{}' : null);
     if (encoded != null) headers['Content-Type'] = 'application/json';
 
+    Future<http.Response> call() => switch (method) {
+      'GET' => _client.get(uri, headers: headers),
+      'POST' => _client.post(uri, headers: headers, body: encoded),
+      'PUT' => _client.put(uri, headers: headers, body: encoded),
+      'PATCH' => _client.patch(uri, headers: headers, body: encoded),
+      'DELETE' => _client.delete(uri, headers: headers, body: encoded),
+      _ => throw ArgumentError('Unsupported method: $method'),
+    }.timeout(timeout);
+
     http.Response res;
     try {
-      res = await switch (method) {
-        'GET' => _client.get(uri, headers: headers),
-        'POST' => _client.post(uri, headers: headers, body: encoded),
-        'PUT' => _client.put(uri, headers: headers, body: encoded),
-        'PATCH' => _client.patch(uri, headers: headers, body: encoded),
-        'DELETE' => _client.delete(uri, headers: headers, body: encoded),
-        _ => throw ArgumentError('Unsupported method: $method'),
-      }.timeout(timeout);
+      res = await call();
+    } on http.ClientException catch (e) {
+      // A kept-alive connection can be dead on reuse (the phone dropped it
+      // in the background, or the network changed). A GET is safe to send
+      // again once, on a new connection; a write is not.
+      if (method != 'GET') return Err(Problem.network(e));
+      try {
+        res = await call();
+      } catch (e) {
+        return Err(Problem.network(e));
+      }
     } catch (e) {
       return Err(Problem.network(e));
     }

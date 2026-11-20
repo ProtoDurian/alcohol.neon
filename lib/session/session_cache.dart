@@ -16,9 +16,9 @@ class SessionSnapshot {
 
 /// Saves the configuration and Today's overview to an app-private JSON file so
 /// the next launch can show Today at once and refresh it in the background.
-/// Keyed by user id and only used on the day it was saved, so a different
-/// account or yesterday's statuses never show. Best-effort: any I/O or decode
-/// failure behaves like an empty cache.
+/// Keyed by user id, so a different account never shows. A Today saved on an
+/// earlier day (up to [maxAge]) is shown dimmed until the fresh one lands.
+/// Best-effort: any I/O or decode failure behaves like an empty cache.
 class SessionCache {
   final Future<Directory> Function() _dir;
   const SessionCache({Future<Directory> Function()? dir})
@@ -37,7 +37,18 @@ class SessionCache {
     }
   }
 
-  Future<void> _write(String userId, String key, Object value) async {
+  // One write at a time, app-wide: config and overview are saved about one
+  // frame apart on every launch, and two read-change-write passes that
+  // overlap each keep only their own half, so the next launch had no Today.
+  static Future<void> _queue = Future.value();
+
+  Future<void> _write(String userId, String key, Object value) {
+    final next = _queue.then((_) => _writeNow(userId, key, value));
+    _queue = next;
+    return next;
+  }
+
+  Future<void> _writeNow(String userId, String key, Object value) async {
     try {
       final old = await _read();
       final m = old != null && old['userId'] == userId
@@ -45,24 +56,28 @@ class SessionCache {
           : <String, dynamic>{'userId': userId};
       m[key] = value;
       if (key == 'overview') m['savedAt'] = DateTime.now().toIso8601String();
-      await (await _file()).writeAsString(jsonEncode(m));
+      // Write a new file and swap it in, so a reader never sees half a file.
+      final f = await _file();
+      final tmp = File('${f.path}.tmp');
+      await tmp.writeAsString(jsonEncode(m), flush: true);
+      await tmp.rename(f.path);
     } catch (_) {
       // Only costs the next launch its instant Today.
     }
   }
 
-  /// The snapshot for [userId] if it is complete and was saved on [now]'s day.
+  /// The snapshot for [userId] if it is complete and at most [maxAge] old.
+  /// A snapshot from an earlier day is still returned: the app shows it
+  /// dimmed as "Updating" instead of a loader (see [SessionSnapshot.savedAt]).
+  static const maxAge = Duration(days: 7);
+
   Future<SessionSnapshot?> load(String userId, {DateTime? now}) async {
     final m = await _read();
     if (m == null || m['userId'] != userId) return null;
     try {
       final savedAt = DateTime.parse(m['savedAt'] as String).toLocal();
       final today = (now ?? DateTime.now()).toLocal();
-      if (savedAt.year != today.year ||
-          savedAt.month != today.month ||
-          savedAt.day != today.day) {
-        return null;
-      }
+      if (today.difference(savedAt) > maxAge) return null;
       return SessionSnapshot(
         ConfigurationPrincipalRes.fromJson(
           (m['config'] as Map).cast<String, Object?>(),

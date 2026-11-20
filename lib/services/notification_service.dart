@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/data/latest_all.dart' as tzdata;
+// Reminders are planned days ahead: the 10-year rule set is enough and loads
+// about 15x faster than latest_all on the UI isolate (the Settings timezone
+// picker still loads latest_all for its full list).
+import 'package:timezone/data/latest_10y.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../generated/zinc/models/habit_overview_habit_res.dart';
@@ -18,6 +22,11 @@ class NotificationService {
   final DateTime Function() _now;
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
+  bool _asked = false;
+
+  /// Lets a test see the permission request again.
+  @visibleForTesting
+  void resetPermissionAsk() => _asked = false;
 
   Future<void> init() async {
     if (_ready) return;
@@ -79,8 +88,13 @@ class NotificationService {
     await init();
     if (isCurrent != null && !isCurrent()) return;
     // Ensure we have permission before scheduling — otherwise iOS silently drops
-    // the reminders. Idempotent: iOS only shows the prompt the first time.
-    await requestPermission();
+    // the reminders. Once per run: on Android 13+ with notifications off, every
+    // request opens the system permission screen (pausing and resuming the app,
+    // which reloads Today), and this runs after every Today load.
+    if (!_asked) {
+      _asked = true;
+      await requestPermission();
+    }
     if (isCurrent != null && !isCurrent()) return;
     await _plugin.cancelAll();
 

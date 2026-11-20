@@ -40,16 +40,22 @@ class DashboardController extends ChangeNotifier {
       _session = session,
       _generation = session.generation {
     // Last launch's Today (same day): shown until the fresh overview lands.
+    final stale = session.cachedOverviewStale;
     final cached = session.takeCachedOverview();
     if (cached != null) {
       _overview = cached;
       _phase = DashboardPhase.ready;
       fromCache = true;
+      this.stale = stale;
     }
   }
 
   /// Whether [overview] is still the saved one from the last launch.
   bool fromCache = false;
+
+  /// Whether [overview] is a saved Today from an earlier day: shown dimmed,
+  /// with actions off, until the fresh overview lands.
+  bool stale = false;
 
   @override
   void dispose() {
@@ -226,6 +232,7 @@ class DashboardController extends ChangeNotifier {
             request > _orderSavedBeforeLoad) {
           _shownOrder = null;
         }
+        stale = false;
         fromCache = false;
         _loadedAt = DateTime.now();
         unawaited(_session.cache.saveOverview(uid, value));
@@ -285,6 +292,7 @@ class DashboardController extends ChangeNotifier {
     if (!_current || uid == null || versionId == null || habitId == null) {
       return;
     }
+    if (stale) return; // yesterday's list: wait for today's
     if (_busy.contains(habitId)) return;
     if (_settled.containsKey(habitId)) return;
     if (skip && skipsLeft <= 0) return;

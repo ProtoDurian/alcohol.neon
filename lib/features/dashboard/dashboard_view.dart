@@ -43,7 +43,7 @@ Future<void> _openEditor(
                 HabitEditorView(habitId: habitId, initialEnabled: enabled),
           ),
         );
-  if (changed == true) c.load();
+  if (changed == true) c.load(quiet: true);
 }
 
 void _openHabit(BuildContext context, DashboardController c, TodayItem item) {
@@ -203,8 +203,10 @@ class _DashboardScaffoldState extends State<_DashboardScaffold>
   @override
   void didPopNext() {
     // Includes a warm NFC link: no app-resume event is required on return.
+    // Quiet: Today stays on screen while it refreshes (a loud load swapped
+    // it for the full-screen loader after every screen, sheet or dialog).
     if (!mounted) return;
-    context.read<DashboardController>().load();
+    context.read<DashboardController>().load(quiet: true);
     context.read<BuffersController>().load();
   }
 
@@ -233,9 +235,14 @@ class _DashboardScaffoldState extends State<_DashboardScaffold>
   /// timezone.
   Future<void> _onResumed() async {
     final dashboard = context.read<DashboardController>();
+    // Open a zinc connection now, while the calls below wait for the token
+    // (a Logto refresh when it is over an hour old): they then skip the
+    // TCP + TLS handshake.
+    unawaited(context.read<SessionController>().auth.makeApiClient().warmUp());
     context.read<BuffersController>().load();
     await context.read<SessionController>().syncDeviceTimezone();
-    if (mounted) dashboard.load();
+    // Quiet: Today stays on screen while it refreshes.
+    if (mounted) dashboard.load(quiet: true);
   }
 
   @override
@@ -303,6 +310,12 @@ class _TodayState extends State<_Today> {
     final nextUp = widget.layout == TodayLayout.nextUp;
 
     final sections = <Widget>[
+      if (c.stale)
+        const GlassBanner(
+          icon: Icons.sync,
+          title: 'Updating Today…',
+          body: "Showing your last saved list until today's loads.",
+        ),
       if (c.refreshError != null)
         GlassBanner(
           icon: Icons.sync_problem,
@@ -361,21 +374,29 @@ class _TodayState extends State<_Today> {
         ),
         // Pull-to-refresh reloads both the overview and the freeze balance.
         CupertinoSliverRefreshControl(
-          onRefresh: () => Future.wait([c.load(), buffers.load()]),
+          onRefresh: () => Future.wait([c.load(quiet: true), buffers.load()]),
         ),
         // One scroll view for every section, so dragging a row to an edge
         // scrolls Today.
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-          sliver: SliverMainAxisGroup(
-            slivers: [
-              for (var i = 0; i < sections.length; i++)
-                sections[i] is _Section
-                    ? Appear(index: i, sliver: true, child: sections[i])
-                    : SliverToBoxAdapter(
-                        child: Appear(index: i, child: sections[i]),
-                      ),
-            ],
+        // A saved Today from an earlier day: dimmed and not tappable until
+        // today's arrives (instead of a full-screen loader).
+        SliverIgnorePointer(
+          ignoring: c.stale,
+          sliver: SliverOpacity(
+            opacity: c.stale ? 0.55 : 1,
+            sliver: SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  for (var i = 0; i < sections.length; i++)
+                    sections[i] is _Section
+                        ? Appear(index: i, sliver: true, child: sections[i])
+                        : SliverToBoxAdapter(
+                            child: Appear(index: i, child: sections[i]),
+                          ),
+                ],
+              ),
+            ),
           ),
         ),
       ],

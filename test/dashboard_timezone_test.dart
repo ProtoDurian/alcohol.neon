@@ -63,6 +63,8 @@ class _Session extends ChangeNotifier implements SessionController {
   @override
   HabitOverviewResponse? takeCachedOverview() => null;
   @override
+  bool get cachedOverviewStale => false;
+  @override
   Future<Result<HabitOverviewResponse>>? takeOverviewPrefetch() => null;
   @override
   SessionCache get cache => _cache;

@@ -46,13 +46,17 @@ void main() {
     expect(s.overview.usedSkip, 3);
   });
 
-  test('ignores another user, a missing half, and a previous day', () async {
+  test('ignores another user, a missing half, and a week-old save', () async {
     await cache.saveConfig('u1', config);
     expect(await cache.load('u1'), isNull, reason: 'no overview yet');
     await cache.saveOverview('u1', overview);
     expect(await cache.load('u2'), isNull);
+    // A previous day still loads (shown dimmed as "Updating"); a save older
+    // than maxAge does not.
     final tomorrow = DateTime.now().add(const Duration(days: 1));
-    expect(await cache.load('u1', now: tomorrow), isNull);
+    expect(await cache.load('u1', now: tomorrow), isNotNull);
+    final later = DateTime.now().add(const Duration(days: 8));
+    expect(await cache.load('u1', now: later), isNull);
     // A different user's save replaces the file rather than mixing in.
     await cache.saveOverview('u2', overview);
     expect(await cache.load('u2'), isNull, reason: 'u2 has no config');
