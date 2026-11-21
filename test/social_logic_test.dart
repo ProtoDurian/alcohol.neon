@@ -1,3 +1,4 @@
+import 'package:alcohol_neon/data/friend_repository.dart';
 import 'package:alcohol_neon/data/inbox_repository.dart';
 import 'package:alcohol_neon/features/friends/friend_relation.dart';
 import 'package:alcohol_neon/features/inbox/inbox_kind.dart';
@@ -137,7 +138,10 @@ void main() {
         note('friend_request', data: '{"fromUserId":"u1"}'),
       );
       expect(req, isA<FriendRequestNotice>());
-      expect((req as FriendRequestNotice).fromUserId, 'u1');
+      expect(
+        (req as FriendRequestNotice).state.status,
+        FriendRequestStatus.unavailable,
+      );
 
       final acc = inboxKindOf(
         note('friend_accepted', data: '{"friendUserId":"u2"}'),
@@ -154,14 +158,24 @@ void main() {
       expect(missed.localDate, '2026-11-11');
     });
 
-    test('falls back to the actor, then to plain text', () {
-      final req = inboxKindOf(note('friend_request', data: 'oops', actor: 'a'));
-      expect((req as FriendRequestNotice).fromUserId, 'a');
-      expect(inboxKindOf(note('friend_request')), isA<PlainNotice>());
-      expect(
-        inboxKindOf(note('weekly_digest', data: '{}')),
-        isA<PlainNotice>(),
-      );
-    });
+    test(
+      'request data/actor never substitutes for linked occurrence identity',
+      () {
+        final req = inboxKindOf(
+          note('friend_request', data: 'oops', actor: 'a'),
+        );
+        expect((req as FriendRequestNotice).state.pending, isFalse);
+        expect(
+          (inboxKindOf(note('friend_request')) as FriendRequestNotice)
+              .state
+              .status,
+          FriendRequestStatus.unavailable,
+        );
+        expect(
+          inboxKindOf(note('weekly_digest', data: '{}')),
+          isA<PlainNotice>(),
+        );
+      },
+    );
   });
 }
