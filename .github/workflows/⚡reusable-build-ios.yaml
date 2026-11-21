@@ -28,7 +28,7 @@ jobs:
     steps:
       # On macOS, setup-nix serves nix from a file:// cache on the Namespace cache
       # volume — requires the -with-cache runner labels above.
-      - uses: AtomiCloud/actions.setup-nix@v3
+      - uses: AtomiCloud/actions.setup-nix@v4
 
       # Must run after checkout (done by setup-nix).
       - uses: namespacelabs/nscloud-cache-action@v1

@@ -9,7 +9,7 @@ jobs:
       - nscloud-cache-size-50gb
       - nscloud-cache-tag-atomi-nix-store-cache
     steps:
-      - uses: AtomiCloud/actions.setup-nix@v3
+      - uses: AtomiCloud/actions.setup-nix@v4
       - name: Keep atomiutils out of the CI and CD shells
         run: ./scripts/ci/check-ci-shells.sh
       - name: Run tests
@@ -25,7 +25,7 @@ jobs:
       - nscloud-cache-tag-atomi-nix-store-cache
     timeout-minutes: 60
     steps:
-      - uses: AtomiCloud/actions.setup-nix@v3
+      - uses: AtomiCloud/actions.setup-nix@v4
         with:
           # Same as Build AAB: .#build-android comes from cache.nixos.org or Google's
           # SDK zips, so attic only adds stalling downloads.
