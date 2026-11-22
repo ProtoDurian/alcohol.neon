@@ -113,7 +113,7 @@ permissions_, like any human user, keyed by its email.
 
 Run a manual CD smoke: Actions → **CD → Run workflow → flavor: pichu**. The
 Android job should query the latest build number and upload to the internal
-track of `cloud.atomi.pichu.alcohol.neon.app`.
+track of `cloud.durian.pichu.alcohol.neon.app`.
 
 ## Troubleshooting
 

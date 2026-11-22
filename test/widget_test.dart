@@ -14,12 +14,12 @@ void main() {
     'AppConfig resolves landscape + layered config from its bundle id',
     () async {
       final config = await AppConfig.resolveForPackage(
-        'cloud.atomi.pichu.alcohol.neon.app',
+        'cloud.durian.pichu.alcohol.neon.app',
       );
       expect(config.landscape, Landscape.pichu);
       expect(
         config.redirectUri,
-        'cloud.atomi.pichu.alcohol.neon.app://callback',
+        'cloud.durian.pichu.alcohol.neon.app://callback',
       );
       expect(config.logtoEndpoint, contains('pichu')); // from pichu.yaml
       expect(config.logtoAppId, 'k19tbzmnsndxnt1v6rfkm'); // from pichu.yaml
@@ -31,12 +31,12 @@ void main() {
     'AppConfig resolves raichu from its raichu bundle id landscape segment',
     () async {
       final config = await AppConfig.resolveForPackage(
-        'cloud.atomi.raichu.alcohol.neon.app',
+        'cloud.durian.raichu.alcohol.neon.app',
       );
       expect(config.landscape, Landscape.raichu);
       expect(
         config.redirectUri,
-        'cloud.atomi.raichu.alcohol.neon.app://callback',
+        'cloud.durian.raichu.alcohol.neon.app://callback',
       );
       expect(
         config.airwallexEnv,
@@ -49,19 +49,19 @@ void main() {
     'AppConfig resolves lapras from the flavorless LPSM bundle id',
     () async {
       final config = await AppConfig.resolveForPackage(
-        'cloud.atomi.lapras.alcohol.neon.app',
+        'cloud.durian.lapras.alcohol.neon.app',
       );
       expect(config.landscape, Landscape.lapras);
       expect(
         config.redirectUri,
-        'cloud.atomi.lapras.alcohol.neon.app://callback',
+        'cloud.durian.lapras.alcohol.neon.app://callback',
       );
     },
   );
 
   test('landscape segment also resolves from module bundle ids', () async {
     final config = await AppConfig.resolveForPackage(
-      'cloud.atomi.pichu.alcohol.neon.app.widget',
+      'cloud.durian.pichu.alcohol.neon.app.widget',
     );
     expect(config.landscape, Landscape.pichu);
   });
@@ -97,7 +97,7 @@ void main() {
 
   test('AppConfig resolves an Airwallex environment per landscape', () async {
     final config = await AppConfig.resolveForPackage(
-      'cloud.atomi.pikachu.alcohol.neon.app',
+      'cloud.durian.pikachu.alcohol.neon.app',
     );
     expect(config.landscape, Landscape.pikachu);
     expect(config.airwallexEnv, Environment.production);

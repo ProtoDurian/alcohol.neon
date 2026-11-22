@@ -35,11 +35,11 @@ Everything done "×3" is only _identity registration_.
 
 ## Identities (target state)
 
-| Flavor            | iOS bundle id                      | Android applicationId              | Display name  | Public?                       |
-| ----------------- | ---------------------------------- | ---------------------------------- | ------------- | ----------------------------- |
-| `pichu` (dev)     | `cloud.atomi.alcohol.neon.pichu`   | `cloud.atomi.alcohol_neon.pichu`   | LazyTax Dev   | No (TestFlight/internal only) |
-| `pikachu` (stage) | `cloud.atomi.alcohol.neon.pikachu` | `cloud.atomi.alcohol_neon.pikachu` | LazyTax Stage | No (TestFlight/closed only)   |
-| `raichu` (prod)   | `cloud.atomi.alcohol.neon.raichu`  | `cloud.atomi.alcohol_neon.raichu`  | LazyTax       | Yes                           |
+| Flavor            | iOS bundle id                       | Android applicationId              | Display name  | Public?                       |
+| ----------------- | ----------------------------------- | ---------------------------------- | ------------- | ----------------------------- |
+| `pichu` (dev)     | `cloud.durian.alcohol.neon.pichu`   | `cloud.atomi.alcohol_neon.pichu`   | LazyTax Dev   | No (TestFlight/internal only) |
+| `pikachu` (stage) | `cloud.durian.alcohol.neon.pikachu` | `cloud.atomi.alcohol_neon.pikachu` | LazyTax Stage | No (TestFlight/closed only)   |
+| `raichu` (prod)   | `cloud.durian.alcohol.neon.raichu`  | `cloud.atomi.alcohol_neon.raichu`  | LazyTax       | Yes                           |
 
 ---
 
@@ -72,17 +72,17 @@ Everything done "×3" is only _identity registration_.
 ```
 # pichu (dev)
 Description: LazyTax Dev
-Bundle ID:   Explicit  →  cloud.atomi.alcohol.neon.pichu
+Bundle ID:   Explicit  →  cloud.durian.alcohol.neon.pichu
 Capability:  [x] Push Notifications
 
 # pikachu (stage)
 Description: LazyTax Stage
-Bundle ID:   Explicit  →  cloud.atomi.alcohol.neon.pikachu
+Bundle ID:   Explicit  →  cloud.durian.alcohol.neon.pikachu
 Capability:  [x] Push Notifications
 
 # raichu (prod)
 Description: LazyTax
-Bundle ID:   Explicit  →  cloud.atomi.alcohol.neon.raichu
+Bundle ID:   Explicit  →  cloud.durian.alcohol.neon.raichu
 Capability:  [x] Push Notifications
 ```
 
@@ -103,7 +103,7 @@ Capability:  [x] Push Notifications
 Platforms:        [x] iOS
 Name:             LazyTax Dev
 Primary Language: English (U.S.)
-Bundle ID:        cloud.atomi.alcohol.neon.pichu
+Bundle ID:        cloud.durian.alcohol.neon.pichu
 SKU:              alcohol-neon-pichu
 User Access:      Full Access
 
@@ -111,7 +111,7 @@ User Access:      Full Access
 Platforms:        [x] iOS
 Name:             LazyTax Stage
 Primary Language: English (U.S.)
-Bundle ID:        cloud.atomi.alcohol.neon.pikachu
+Bundle ID:        cloud.durian.alcohol.neon.pikachu
 SKU:              alcohol-neon-pikachu
 User Access:      Full Access
 
@@ -119,7 +119,7 @@ User Access:      Full Access
 Platforms:        [x] iOS
 Name:             LazyTax
 Primary Language: English (U.S.)
-Bundle ID:        cloud.atomi.alcohol.neon.raichu
+Bundle ID:        cloud.durian.alcohol.neon.raichu
 SKU:              alcohol-neon-raichu
 User Access:      Full Access
 ```
@@ -291,13 +291,13 @@ Secret: [x]
 **10d — Per-landscape values** are NOT entered in the UI — they live in `codemagic.yaml` (Part 11), where
 each workflow/loop iteration sets its own. Reference table:
 
-|                      | pichu                          | pikachu                          | raichu                          |
-| -------------------- | ------------------------------ | -------------------------------- | ------------------------------- |
-| `FLAVOR`             | pichu                          | pikachu                          | raichu                          |
-| `BUNDLE_ID_IOS`      | cloud.atomi.alcohol.neon.pichu | cloud.atomi.alcohol.neon.pikachu | cloud.atomi.alcohol.neon.raichu |
-| `PACKAGE_NAME`       | cloud.atomi.alcohol_neon.pichu | cloud.atomi.alcohol_neon.pikachu | cloud.atomi.alcohol_neon.raichu |
-| `APP_STORE_APPLE_ID` | _(pichu Apple ID, Part 4)_     | _(pikachu Apple ID)_             | _(raichu Apple ID)_             |
-| `GOOGLE_PLAY_TRACK`  | internal                       | qa-closed _(closed-track name)_  | production                      |
+|                      | pichu                           | pikachu                           | raichu                           |
+| -------------------- | ------------------------------- | --------------------------------- | -------------------------------- |
+| `FLAVOR`             | pichu                           | pikachu                           | raichu                           |
+| `BUNDLE_ID_IOS`      | cloud.durian.alcohol.neon.pichu | cloud.durian.alcohol.neon.pikachu | cloud.durian.alcohol.neon.raichu |
+| `PACKAGE_NAME`       | cloud.atomi.alcohol_neon.pichu  | cloud.atomi.alcohol_neon.pikachu  | cloud.atomi.alcohol_neon.raichu  |
+| `APP_STORE_APPLE_ID` | _(pichu Apple ID, Part 4)_      | _(pikachu Apple ID)_              | _(raichu Apple ID)_              |
+| `GOOGLE_PLAY_TRACK`  | internal                        | qa-closed _(closed-track name)_   | production                       |
 
 The Apple IDs aren't secret, so they'll be hardcoded in the YAML. (Only the Play JSON needs to be a Codemagic secret.)
 
@@ -317,7 +317,7 @@ The Apple IDs aren't secret, so they'll be hardcoded in the YAML. (Only the Play
 **You still need to do — iOS Xcode flavor setup** (schemes don't exist yet; `--flavor pichu` needs them):
 
 1. Open `ios/Runner.xcworkspace` in Xcode.
-2. **Rename the base bundle id** to `cloud.atomi.alcohol.neon` (currently `cloud.atomi.alcoholNeon`) — Runner target → Signing & Capabilities, all configs.
+2. **Rename the base bundle id** to `cloud.durian.alcohol.neon` (currently `cloud.durian.alcoholNeon`) — Runner target → Signing & Capabilities, all configs.
 3. **Duplicate build configs:** Project → Info → Configurations → duplicate Debug/Profile/Release into `*-pichu`, `*-pikachu`, `*-raichu`.
 4. **Create 3 shared schemes** named exactly `pichu`/`pikachu`/`raichu` (Product → Scheme → Manage Schemes → +, tick _Shared_); map each scheme's Run/Profile/Archive to its `-<flavor>` configs.
 5. **Per-config bundle id + name:** set `PRODUCT_BUNDLE_IDENTIFIER` per config (`…neon.pichu`/`…neon.pikachu`/`…neon.raichu`); add a user-defined `APP_DISPLAY_NAME` (`LazyTax Dev`/`LazyTax Stage`/`LazyTax`) and set Info.plist _Bundle display name_ = `$(APP_DISPLAY_NAME)`.
@@ -326,7 +326,7 @@ The Apple IDs aren't secret, so they'll be hardcoded in the YAML. (Only the Play
 
 **You still need to do — Logto:** `pichu` already has a real Logto app id in `AppConfig`; **`pikachu` and `raichu`
 still have `REPLACE_WITH_NATIVE_LOGTO_APP_ID`.** Create a Logto Native app per landscape (redirect
-`cloud.atomi.alcohol.neon://callback` works for all three on iOS) and put each id in `lib/config/app_config.dart`.
+`cloud.durian.alcohol.neon://callback` works for all three on iOS) and put each id in `lib/config/app_config.dart`.
 Sign-in won't complete on pikachu/raichu until set.
 
 **Optional:** per-flavor launcher icons (DEV/STG badges) via `flutter_launcher_icons`.

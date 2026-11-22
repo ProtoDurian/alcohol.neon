@@ -39,7 +39,7 @@ GRADLE="$ROOT/android/app/build.gradle.kts"
 
 P=$(yq '.platform' "$LPSM")
 S=$(yq '.service' "$LPSM")
-NEW_ID="cloud.atomi.$LANDSCAPE.$P.$S.app"
+NEW_ID="cloud.durian.$LANDSCAPE.$P.$S.app"
 
 # Display name comes from the gradle flavor block — the file that defines it —
 # so the stamp can never drift from what a real per-flavor build would produce.

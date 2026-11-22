@@ -627,7 +627,7 @@
 			baseConfigurationReference = 0F439A466E0EFB7F3E542AB4 /* raichuRelease.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-raichu";
@@ -643,7 +643,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -660,8 +660,8 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.pichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pichu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.pichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pichu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -677,7 +677,7 @@
 			baseConfigurationReference = 8F37BDEDDF1B79C4D5FF1055 /* pichuRelease.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-pichu";
@@ -742,15 +742,15 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				NEON_APP_GROUP = group.cloud.atomi.lapras.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.lapras.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -769,7 +769,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -784,8 +784,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.raichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.raichu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.raichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.raichu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -803,7 +803,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -821,7 +821,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
@@ -837,7 +837,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
@@ -904,8 +904,8 @@
 					"$(PROJECT_DIR)/Flutter",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				NEON_APP_GROUP = group.cloud.atomi.raichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.raichu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.raichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.raichu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -975,8 +975,8 @@
 					"$(PROJECT_DIR)/Flutter",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				NEON_APP_GROUP = group.cloud.atomi.pikachu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pikachu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.pikachu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pikachu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -991,7 +991,7 @@
 			baseConfigurationReference = B030497F541F78CA8CBDC0F2 /* pikachuRelease.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-pikachu";
@@ -1056,8 +1056,8 @@
 					"$(PROJECT_DIR)/Flutter",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				NEON_APP_GROUP = group.cloud.atomi.pichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pichu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.pichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pichu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1080,7 +1080,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1097,8 +1097,8 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.pikachu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pikachu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.pikachu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pikachu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -1120,7 +1120,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1137,8 +1137,8 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.raichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.raichu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.raichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.raichu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -1216,8 +1216,8 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				NEON_APP_GROUP = group.cloud.atomi.pichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pichu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.pichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pichu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -1236,7 +1236,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1251,8 +1251,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.pichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pichu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.pichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pichu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1266,7 +1266,7 @@
 			baseConfigurationReference = 5C29F99E32D8B8DA6C57187C /* pichuDebug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-pichu";
@@ -1282,7 +1282,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1297,8 +1297,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.pichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pichu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.pichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pichu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1318,7 +1318,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1333,8 +1333,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.pikachu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pikachu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.pikachu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pikachu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1462,15 +1462,15 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				NEON_APP_GROUP = group.cloud.atomi.lapras.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.lapras.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -1487,15 +1487,15 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				NEON_APP_GROUP = group.cloud.atomi.lapras.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.lapras.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -1570,8 +1570,8 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				NEON_APP_GROUP = group.cloud.atomi.pikachu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pikachu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.pikachu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pikachu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -1639,8 +1639,8 @@
 					"$(PROJECT_DIR)/Flutter",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				NEON_APP_GROUP = group.cloud.atomi.pichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pichu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.pichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pichu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -1661,7 +1661,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1676,8 +1676,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.pikachu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pikachu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.pikachu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pikachu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1746,8 +1746,8 @@
 					"$(PROJECT_DIR)/Flutter",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				NEON_APP_GROUP = group.cloud.atomi.raichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.raichu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.raichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.raichu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1819,8 +1819,8 @@
 					"$(PROJECT_DIR)/Flutter",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				NEON_APP_GROUP = group.cloud.atomi.pikachu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.pikachu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.pikachu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.pikachu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1837,7 +1837,7 @@
 			baseConfigurationReference = 912A37FF08CB1E1873AC75CC /* pikachuProfile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-pikachu";
@@ -1853,7 +1853,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1868,8 +1868,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.raichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.raichu.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.raichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.raichu.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1889,7 +1889,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -1904,8 +1904,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.lapras.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.lapras.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1919,7 +1919,7 @@
 			baseConfigurationReference = 733693DFCA5C75CC096C1A70 /* pikachuDebug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-pikachu";
@@ -1929,7 +1929,7 @@
 			baseConfigurationReference = FD2B992E2EDACEB95E322D65 /* pichuProfile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-pichu";
@@ -1939,7 +1939,7 @@
 			baseConfigurationReference = 119F0BF53AEAA4E2F4D97B03 /* raichuProfile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-raichu";
@@ -1949,7 +1949,7 @@
 			baseConfigurationReference = A30DCDA8212D9607376E8C5C /* raichuDebug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-raichu";
@@ -2021,8 +2021,8 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				NEON_APP_GROUP = group.cloud.atomi.raichu.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.raichu.alcohol.neon.app;
+				NEON_APP_GROUP = group.cloud.durian.raichu.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.raichu.alcohol.neon.app;
 				SDKROOT = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -2041,7 +2041,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -2058,8 +2058,8 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.lapras.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.lapras.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -2081,7 +2081,7 @@
 				CODE_SIGN_ENTITLEMENTS = NeonWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = MNPSXJP9PN;
+				DEVELOPMENT_TEAM = 65MNKVTTH4;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeonWidget/Info.plist;
@@ -2096,8 +2096,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
-				NEON_APP_GROUP = group.cloud.atomi.lapras.alcohol.neon.app;
-				PRODUCT_BUNDLE_IDENTIFIER = cloud.atomi.lapras.alcohol.neon.app.widget;
+				NEON_APP_GROUP = group.cloud.durian.lapras.alcohol.neon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.durian.lapras.alcohol.neon.app.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;

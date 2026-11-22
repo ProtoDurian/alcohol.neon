@@ -29,7 +29,7 @@ export ANDROID_KEYSTORE_PATH="$KS"
 # with the CI run number, which only ever grows (same guard as iOS).
 PLATFORM=$(yq '.platform' lpsm.yaml)
 SERVICE=$(yq '.service' lpsm.yaml)
-PACKAGE="cloud.atomi.$LANDSCAPE.$PLATFORM.$SERVICE.app"
+PACKAGE="cloud.durian.$LANDSCAPE.$PLATFORM.$SERVICE.app"
 LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE" || echo 0)
 VERSION_CODE=$((${LATEST:-0} + 1))
 if [ "${GITHUB_RUN_NUMBER:-0}" -gt "$VERSION_CODE" ]; then

@@ -77,7 +77,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     AppConfig.current = await AppConfig.resolveForPackage(
-      'cloud.atomi.pichu.alcohol.neon.app',
+      'cloud.durian.pichu.alcohol.neon.app',
     );
   });
 

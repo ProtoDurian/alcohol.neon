@@ -7,7 +7,7 @@ set -euo pipefail
 #
 # Everything comes from lpsm.yaml — the single source of truth for the LPSM
 # service tree (docs/developer/standard/bundle-id.md): package_name (Android)
-# == cloud.atomi.<landscape>.<platform>.<service>, identical to the iOS bundle
+# == cloud.durian.<landscape>.<platform>.<service>, identical to the iOS bundle
 # id (which CD discovers from the Xcode project via ios-signing-targets.sh).
 # apple_id (the numeric App Store Connect app id) is filled into lpsm.yaml by
 # `pls register`; while empty, cd-ios.sh falls back to the CI run number for
@@ -30,7 +30,7 @@ PLATFORM=$(yq '.platform' "$LPSM")
 SERVICE=$(yq '.service' "$LPSM")
 
 ALL=$(yq -o=json -I=0 '.landscapes' "$LPSM" | jq -c --arg p "$PLATFORM" --arg s "$SERVICE" \
-  '[.[] | {flavor: .name, apple_id: (.apple_id // ""), package_name: "cloud.atomi.\(.name).\($p).\($s).app"}]')
+  '[.[] | {flavor: .name, apple_id: (.apple_id // ""), package_name: "cloud.durian.\(.name).\($p).\($s).app"}]')
 
 if [ "${EVENT:-}" = "workflow_dispatch" ]; then
   FILTERED=$(echo "$ALL" | jq -c --arg f "${SEL:-}" '[.[] | select(.flavor==$f)]')

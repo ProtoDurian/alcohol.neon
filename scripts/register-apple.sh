@@ -322,7 +322,7 @@ for L in "${LANDSCAPES[@]}"; do
 
   while IFS= read -r bundle_id; do
     ALL_TARGET_IDS+=("$bundle_id")
-    module=${bundle_id#cloud.atomi."$L"."$PLATFORM"."$SERVICE".}
+    module=${bundle_id#cloud.durian."$L"."$PLATFORM"."$SERVICE".}
     name="LazyTax $L ${module//./ }"
 
     ensure "App ID $bundle_id" \
