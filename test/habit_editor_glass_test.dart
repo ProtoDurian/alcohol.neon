@@ -73,7 +73,7 @@ void main() {
   setUp(() {
     PackageInfo.setMockInitialValues(
       appName: 'LazyTax',
-      packageName: 'cloud.atomi.pichu.alcohol.neon.app',
+      packageName: 'cloud.durian.pichu.alcohol.neon.app',
       version: '1',
       buildNumber: '1',
       buildSignature: '',

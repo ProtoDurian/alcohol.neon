@@ -25,12 +25,12 @@ android {
     }
 
     defaultConfig {
-        // LPSM application id (cloud.atomi.<landscape>.<platform>.<service>) — identical
+        // LPSM application id (cloud.durian.<landscape>.<platform>.<service>) — identical
         // to the iOS bundle id. Once flavors are declared Android always requires
         // --flavor, so this base id is never shipped; it maps to the local `lapras`
         // landscape purely for consistency with iOS's flavorless configs, and each
         // flavor overrides it with its own landscape below.
-        applicationId = "cloud.atomi.lapras.alcohol.neon.app"
+        applicationId = "cloud.durian.lapras.alcohol.neon.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -40,7 +40,7 @@ android {
     }
 
     // Per-landscape flavors (bundle-id-as-marker): each sets its full LPSM
-    // applicationId (cloud.atomi.<landscape>.alcohol.neon.app — identical to iOS) + app
+    // applicationId (cloud.durian.<landscape>.alcohol.neon.app — identical to iOS) + app
     // name — including prod (raichu), so all three install side-by-side and prod has
     // a distinct id. The Logto redirect scheme is the applicationId itself. Build
     // with e.g. `flutter build appbundle --flavor pichu`.
@@ -48,21 +48,21 @@ android {
     productFlavors {
         create("pichu") {
             dimension = "landscape"
-            applicationId = "cloud.atomi.pichu.alcohol.neon.app"
+            applicationId = "cloud.durian.pichu.alcohol.neon.app"
             manifestPlaceholders["appName"] = "LazyTax (Pichu)"
-            manifestPlaceholders["logtoRedirectScheme"] = "cloud.atomi.pichu.alcohol.neon.app"
+            manifestPlaceholders["logtoRedirectScheme"] = "cloud.durian.pichu.alcohol.neon.app"
         }
         create("pikachu") {
             dimension = "landscape"
-            applicationId = "cloud.atomi.pikachu.alcohol.neon.app"
+            applicationId = "cloud.durian.pikachu.alcohol.neon.app"
             manifestPlaceholders["appName"] = "LazyTax (Pikachu)"
-            manifestPlaceholders["logtoRedirectScheme"] = "cloud.atomi.pikachu.alcohol.neon.app"
+            manifestPlaceholders["logtoRedirectScheme"] = "cloud.durian.pikachu.alcohol.neon.app"
         }
         create("raichu") {
             dimension = "landscape"
-            applicationId = "cloud.atomi.raichu.alcohol.neon.app"
+            applicationId = "cloud.durian.raichu.alcohol.neon.app"
             manifestPlaceholders["appName"] = "LazyTax"
-            manifestPlaceholders["logtoRedirectScheme"] = "cloud.atomi.raichu.alcohol.neon.app"
+            manifestPlaceholders["logtoRedirectScheme"] = "cloud.durian.raichu.alcohol.neon.app"
         }
     }
 

@@ -27,13 +27,13 @@ err() {
   fail=1
 }
 
-# id → 0 if it matches cloud.atomi.<L>.<platform>.<service>.<module>[.<module>]*
+# id → 0 if it matches cloud.durian.<L>.<platform>.<service>.<module>[.<module>]*
 # for a known L. The module segment is MANDATORY (the main app is the `app`
 # module); a module-less id is a grammar violation.
 allowed() {
   local id=$1 l
   while IFS= read -r l; do
-    [[ $id =~ ^cloud\.atomi\.$l\.$P\.$S(\.[a-z][a-z0-9]*)+$ ]] && return 0
+    [[ $id =~ ^cloud\.durian\.$l\.$P\.$S(\.[a-z][a-z0-9]*)+$ ]] && return 0
   done <<<"$landscapes"
   return 1
 }
@@ -67,7 +67,7 @@ while IFS= read -r l; do
   f="$ROOT/config/$l.yaml"
   [ "$l" = lapras ] && f="$ROOT/config/base.yaml"
   [ -f "$f" ] || continue
-  want="cloud.atomi.$l.$P.$S.app://callback"
+  want="cloud.durian.$l.$P.$S.app://callback"
   got=$(sed -n "s/^redirectUri: '\(.*\)'$/\1/p" "$f")
   [ -z "$got" ] || [ "$got" = "$want" ] ||
     err "$(basename "$f"): redirectUri '$got' should be '$want'"
@@ -75,7 +75,7 @@ done <<<"$landscapes"
 
 # 5. Every release landscape must actually have an app target in Xcode.
 while IFS= read -r l; do
-  grep -q "PRODUCT_BUNDLE_IDENTIFIER = cloud\.atomi\.$l\.$P\.$S\.app;" "$PBXPROJ" ||
+  grep -q "PRODUCT_BUNDLE_IDENTIFIER = cloud\.durian\.$l\.$P\.$S\.app;" "$PBXPROJ" ||
     err "lpsm.yaml landscape '$l' has no app target in the Xcode project"
 done <<<"$release_landscapes"
 
@@ -84,14 +84,14 @@ done <<<"$release_landscapes"
 # LPSM grammar gives every module an App Group; register associates it).
 first_landscape=$(head -1 <<<"$release_landscapes")
 while IFS= read -r id; do
-  module=${id#cloud.atomi."$first_landscape"."$P"."$S".}
+  module=${id#cloud.durian."$first_landscape"."$P"."$S".}
   caps=$(yq ".capabilities.\"$module\" // [] | .[]" "$LPSM")
   if [ -z "$caps" ]; then
     err "lpsm.yaml: no capabilities declared for module '$module'"
   elif ! grep -qx "app-group" <<<"$caps"; then
     err "lpsm.yaml: capabilities for module '$module' must include app-group"
   fi
-done < <(sed -n "s/^[[:space:]]*PRODUCT_BUNDLE_IDENTIFIER = \(cloud\.atomi\.$first_landscape\.[a-z0-9.]*\);$/\1/p" "$PBXPROJ" | grep -v '\.tests$' | sort -u)
+done < <(sed -n "s/^[[:space:]]*PRODUCT_BUNDLE_IDENTIFIER = \(cloud\.durian\.$first_landscape\.[a-z0-9.]*\);$/\1/p" "$PBXPROJ" | grep -v '\.tests$' | sort -u)
 
 if [ "$fail" -eq 0 ]; then
   echo "lpsm-lint: OK — all store identifiers derive from lpsm.yaml"

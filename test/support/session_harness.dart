@@ -20,7 +20,7 @@ http.Response jsonResponse(Object body, [int status = 200]) => http.Response(
 
 Future<void> loadHarnessConfig() async {
   AppConfig.current = await AppConfig.resolveForPackage(
-    'cloud.atomi.pichu.alcohol.neon.app',
+    'cloud.durian.pichu.alcohol.neon.app',
   );
 }
 

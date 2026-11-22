@@ -29,7 +29,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LPSM="$ROOT/lpsm.yaml"
 P=$(yq '.platform' "$LPSM")
 S=$(yq '.service' "$LPSM")
-NEW_ID="cloud.atomi.$LANDSCAPE.$P.$S.app"
+NEW_ID="cloud.durian.$LANDSCAPE.$P.$S.app"
 WIDGET_ID="$NEW_ID.widget"
 GROUP="group.$NEW_ID"
 

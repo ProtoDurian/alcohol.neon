@@ -6,7 +6,7 @@ import 'package:alcohol_neon/features/strava/strava_settings.dart';
 import 'package:alcohol_neon/features/subscription/tier.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const scheme = 'cloud.atomi.pichu.alcohol.neon.app';
+const scheme = 'cloud.durian.pichu.alcohol.neon.app';
 
 InboxNotificationRes note(String kind, {String? data, String? actor}) =>
     InboxNotificationRes(
@@ -55,7 +55,7 @@ void main() {
     test('ignores the Logto callback, other schemes and tag links', () {
       expect(parse('$scheme://callback?code=abc'), isNull);
       expect(
-        parse('cloud.atomi.raichu.alcohol.neon.app://strava?result=connected'),
+        parse('cloud.durian.raichu.alcohol.neon.app://strava?result=connected'),
         isNull,
       );
       expect(parse('https://t.lazytax.club/t/abc'), isNull);

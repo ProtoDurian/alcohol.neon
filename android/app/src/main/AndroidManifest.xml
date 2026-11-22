@@ -66,7 +66,7 @@
                     android:pathPrefix="/t/" />
             </intent-filter>
             <!-- zinc's Strava OAuth redirect back into the app
-                 (cloud.atomi.<landscape>.alcohol.neon.app://strava?result=…),
+                 (cloud.durian.<landscape>.alcohol.neon.app://strava?result=…),
                  read by app_links (StravaLinks). -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -78,7 +78,7 @@
             </intent-filter>
         </activity>
         <!-- flutter_web_auth_2 callback for Logto sign-in redirect
-             (cloud.atomi.<landscape>.alcohol.neon.app://callback). Must match AppConfig.redirectUri.
+             (cloud.durian.<landscape>.alcohol.neon.app://callback). Must match AppConfig.redirectUri.
              Host-restricted so other links on the same scheme (…://strava) reach MainActivity. -->
         <activity
             android:name="com.linusu.flutter_web_auth_2.CallbackActivity"

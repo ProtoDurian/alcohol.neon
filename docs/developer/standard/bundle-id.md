@@ -28,15 +28,15 @@ after the reversed domain (`atomi.cloud` → `cloud.atomi`).
 
 ### For alcohol.neon
 
-| Thing               | pichu (dev)                                     | raichu (prod)                                    |
-| ------------------- | ----------------------------------------------- | ------------------------------------------------ |
-| App (iOS + Android) | `cloud.atomi.pichu.alcohol.neon.app`            | `cloud.atomi.raichu.alcohol.neon.app`            |
-| Home-screen widget  | `cloud.atomi.pichu.alcohol.neon.app.widget`     | `cloud.atomi.raichu.alcohol.neon.app.widget`     |
-| App Group           | `group.cloud.atomi.pichu.alcohol.neon.app`      | `group.cloud.atomi.raichu.alcohol.neon.app`      |
-| Logto redirect      | `cloud.atomi.pichu.alcohol.neon.app://callback` | `cloud.atomi.raichu.alcohol.neon.app://callback` |
+| Thing               | pichu (dev)                                      | raichu (prod)                                     |
+| ------------------- | ------------------------------------------------ | ------------------------------------------------- |
+| App (iOS + Android) | `cloud.durian.pichu.alcohol.neon.app`            | `cloud.durian.raichu.alcohol.neon.app`            |
+| Home-screen widget  | `cloud.durian.pichu.alcohol.neon.app.widget`     | `cloud.durian.raichu.alcohol.neon.app.widget`     |
+| App Group           | `group.cloud.durian.pichu.alcohol.neon.app`      | `group.cloud.durian.raichu.alcohol.neon.app`      |
+| Logto redirect      | `cloud.durian.pichu.alcohol.neon.app://callback` | `cloud.durian.raichu.alcohol.neon.app://callback` |
 
 Flavorless local builds map to the `lapras` landscape
-(`cloud.atomi.lapras.alcohol.neon.app`); the unit-test bundle uses the `tests` module.
+(`cloud.durian.lapras.alcohol.neon.app`); the unit-test bundle uses the `tests` module.
 
 ## Rules
 

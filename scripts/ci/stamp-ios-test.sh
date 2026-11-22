@@ -9,8 +9,8 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 # shellcheck source=scripts/ci/stamp-ios-lib.sh disable=SC1091
 source "$ROOT/scripts/ci/stamp-ios-lib.sh"
 
-OLD=cloud.atomi.raichu.alcohol.neon.app
-NEW=cloud.atomi.pichu.alcohol.neon.app
+OLD=cloud.durian.raichu.alcohol.neon.app
+NEW=cloud.durian.pichu.alcohol.neon.app
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 PLIST="$WORK/Info.plist"

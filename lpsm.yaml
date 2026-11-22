@@ -1,6 +1,6 @@
 # LPSM service tree — the single source of truth for store identifiers.
 # Grammar (docs/developer/standard/bundle-id.md):
-#   bundle id == Android applicationId == cloud.atomi.<landscape>.<platform>.<service>.<module>
+#   bundle id == Android applicationId == cloud.durian.<landscape>.<platform>.<service>.<module>
 #   (module is mandatory: the main app is `app`, its widget `app.widget`, tests `tests`)
 #   App Group == group.<app bundle id>       Logto redirect == <app bundle id>://callback
 #
@@ -8,11 +8,11 @@
 # (pls register), scripts/ci/lpsm-lint.sh (pre-commit drift check for the files
 # that must carry literals: pbxproj, gradle, pubspec, config yamls).
 
-domain: atomi.cloud
+domain: durian.cloud
 platform: alcohol
 service: neon
 # Apple Developer portal team (signing) — pls register refuses other teams.
-apple_team: MNPSXJP9PN
+apple_team: 65MNKVTTH4
 # Base App Store name: prod (raichu) bare, other landscapes suffixed below.
 app_name: LazyTax
 # Release landscapes, in matrix order.
@@ -26,7 +26,7 @@ app_name: LazyTax
 landscapes:
   - name: pichu
     store_suffix: ' (Pichu)'
-    apple_id: '6788238572'
+    apple_id: '6837944912'
   - name: pikachu
     store_suffix: ' (Pikachu)'
     apple_id: '6788238606'
