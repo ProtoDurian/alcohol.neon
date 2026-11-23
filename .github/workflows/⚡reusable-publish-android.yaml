@@ -47,6 +47,16 @@ jobs:
           set -euo pipefail
           nix develop .#publish-android -c ./scripts/ci/publish-android.sh "$FLAVOR" "$(find donor -name '*.aab' | head -1)"
 
+      # Save the stamped AAB before the Play upload, so it is downloadable even
+      # when the upload fails — e.g. the very first release of a new Play app,
+      # which Google only accepts as a manual upload in Play Console.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: aab-${{ inputs.flavor }}
+          path: build/app/outputs/stamped/*.aab
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Publish to Play internal track
         uses: r0adkll/upload-google-play@v1
         with:
@@ -55,10 +65,3 @@ jobs:
           releaseFiles: build/app/outputs/stamped/${{ inputs.flavor }}.aab
           track: internal
           status: completed
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: aab-${{ inputs.flavor }}
-          path: build/app/outputs/stamped/*.aab
-          if-no-files-found: warn
-          retention-days: 14
