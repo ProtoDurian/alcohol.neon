@@ -29,10 +29,10 @@ landscapes:
     apple_id: '6837944912'
   - name: pikachu
     store_suffix: ' (Pikachu)'
-    apple_id: '6788238606'
+    apple_id: '6838005252'
   - name: raichu
     store_suffix: ': Stake Habits'
-    apple_id: '6788238999'
+    apple_id: '6838175857'
 # Apple App ID capabilities per LPSM module — IaC for the Developer portal:
 # `pls register` enables exactly what is declared here, for every landscape.
 # Values are fastlane `produce enable_services` flags (any service fastlane
