@@ -14,10 +14,9 @@ class ProofBindingRes {
     this.pluginKey,
     this.settings,
   });
-
-  factory ProofBindingRes.fromJson(Map<String, Object?> json) =>
-      _$ProofBindingResFromJson(json);
-
+  
+  factory ProofBindingRes.fromJson(Map<String, Object?> json) => _$ProofBindingResFromJson(json);
+  
   final String habitId;
   final String? pluginKey;
   final int pluginVersion;

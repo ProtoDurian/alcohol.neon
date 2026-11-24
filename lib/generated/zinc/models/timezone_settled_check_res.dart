@@ -8,11 +8,14 @@ part 'timezone_settled_check_res.g.dart';
 
 @JsonSerializable()
 class TimezoneSettledCheckRes {
-  const TimezoneSettledCheckRes({this.habitId, this.date, this.status});
-
-  factory TimezoneSettledCheckRes.fromJson(Map<String, Object?> json) =>
-      _$TimezoneSettledCheckResFromJson(json);
-
+  const TimezoneSettledCheckRes({
+    this.habitId,
+    this.date,
+    this.status,
+  });
+  
+  factory TimezoneSettledCheckRes.fromJson(Map<String, Object?> json) => _$TimezoneSettledCheckResFromJson(json);
+  
   final String? habitId;
   final String? date;
   final String? status;

@@ -58,9 +58,13 @@ class ConsentService {
   ///
   /// [context] must be mounted; it's used to show the confirm dialog and the
   /// blocking poll overlay. Safe to call when consent already exists (returns
-  /// `Ok` immediately).
-  Future<Result<void>> ensureConsent(BuildContext context) async {
-    if (session.hasPaymentConsent) return const Ok(null);
+  /// `Ok` immediately), unless [replace] asks for a new card (Fix card, after
+  /// zinc couldn't charge the one on file).
+  Future<Result<void>> ensureConsent(
+    BuildContext context, {
+    bool replace = false,
+  }) async {
+    if (session.hasPaymentConsent && !replace) return const Ok(null);
 
     final userId = session.userId;
     if (userId == null) return const Err(Problem.unauthenticated);

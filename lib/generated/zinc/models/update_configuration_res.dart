@@ -17,10 +17,9 @@ class UpdateConfigurationRes {
     this.defaultCharityId,
     this.settledChecks,
   });
-
-  factory UpdateConfigurationRes.fromJson(Map<String, Object?> json) =>
-      _$UpdateConfigurationResFromJson(json);
-
+  
+  factory UpdateConfigurationRes.fromJson(Map<String, Object?> json) => _$UpdateConfigurationResFromJson(json);
+  
   final String? id;
   final String? userId;
   final String? timezone;

@@ -17,11 +17,11 @@ class CreateHabitReq {
     this.timezone,
     this.deadlineTime,
     this.routineId,
+    this.habitTime,
   });
-
-  factory CreateHabitReq.fromJson(Map<String, Object?> json) =>
-      _$CreateHabitReqFromJson(json);
-
+  
+  factory CreateHabitReq.fromJson(Map<String, Object?> json) => _$CreateHabitReqFromJson(json);
+  
   final String? task;
   final List<String>? daysOfWeek;
   final String? notificationTime;
@@ -30,6 +30,7 @@ class CreateHabitReq {
   final String? timezone;
   final String? deadlineTime;
   final String? routineId;
+  final String? habitTime;
 
   Map<String, Object?> toJson() => _$CreateHabitReqToJson(this);
 }

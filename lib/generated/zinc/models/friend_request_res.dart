@@ -9,14 +9,15 @@ part 'friend_request_res.g.dart';
 @JsonSerializable()
 class FriendRequestRes {
   const FriendRequestRes({
+    required this.requestId,
     required this.createdAtUtc,
     this.userId,
     this.username,
   });
-
-  factory FriendRequestRes.fromJson(Map<String, Object?> json) =>
-      _$FriendRequestResFromJson(json);
-
+  
+  factory FriendRequestRes.fromJson(Map<String, Object?> json) => _$FriendRequestResFromJson(json);
+  
+  final String requestId;
   final String? userId;
   final String? username;
   final DateTime createdAtUtc;

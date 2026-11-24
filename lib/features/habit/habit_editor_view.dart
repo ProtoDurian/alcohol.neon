@@ -26,7 +26,8 @@ import 'stake_sheet.dart';
 
 /// M3 — create / edit a habit. Field contract mirrors argon (verified against
 /// zinc's HabitValidator): day names are PascalCase (e.g. "Monday"),
-/// notificationTime is "HH:mm:ss", stake is a non-negative decimal string ("0"
+/// habitTime is "HH:mm" and notificationTime "HH:mm:ss", both optional (null
+/// when unset; every day ends at local midnight, so there's no deadline), stake is a non-negative decimal string ("0"
 /// when none), timezone comes from the user's configuration. A charity is only
 /// asked for (and sent) when the stake is above 0. On save it pops `true` so
 /// the dashboard refreshes.
@@ -68,7 +69,10 @@ class _HabitEditorViewState extends State<HabitEditorView> {
     'Thursday',
     'Friday',
   };
-  TimeOfDay _time = const TimeOfDay(hour: 22, minute: 0);
+  // When the user plans to do it, and when to remind them. Both optional;
+  // new habits start with neither.
+  TimeOfDay? _habitTime;
+  TimeOfDay? _reminder;
   String? _charityId;
   String? _charityName;
   String? _existingTimezone;
@@ -122,7 +126,8 @@ class _HabitEditorViewState extends State<HabitEditorView> {
         final h = value;
         _task.text = h.task ?? '';
         _stake.text = h.stake ?? '0';
-        _time = _parseTime(h.notificationTime) ?? _time;
+        _habitTime = _parseTime(h.habitTime);
+        _reminder = _parseTime(h.notificationTime);
         _existingTimezone = h.timezone;
         _days
           ..clear()
@@ -189,8 +194,11 @@ class _HabitEditorViewState extends State<HabitEditorView> {
     return TimeOfDay(hour: h, minute: m);
   }
 
-  String get _timeWire =>
-      '${_time.hour.toString().padLeft(2, '0')}:${_time.minute.toString().padLeft(2, '0')}:00';
+  static String? _wire(TimeOfDay? t, {bool seconds = false}) {
+    if (t == null) return null;
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(t.hour)}:${two(t.minute)}${seconds ? ':00' : ''}';
+  }
 
   String _stakeDisplay() {
     final v = double.tryParse(_stake.text.trim()) ?? 0;
@@ -206,14 +214,14 @@ class _HabitEditorViewState extends State<HabitEditorView> {
 
   bool get _hasCharity => _charityId?.isNotEmpty ?? false;
 
-  /// A wheel in a sheet on iOS, the Material time picker on Android.
-  Future<void> _pickTime() async {
+  /// A wheel in a sheet on iOS, the Material time picker on Android. Null
+  /// when dismissed.
+  Future<TimeOfDay?> _pickTime(String title, TimeOfDay? current) async {
+    final initial = current ?? const TimeOfDay(hour: 9, minute: 0);
     if (!isCupertino(context)) {
-      final picked = await showTimePicker(context: context, initialTime: _time);
-      if (picked != null && mounted) setState(() => _time = picked);
-      return;
+      return showTimePicker(context: context, initialTime: initial);
     }
-    var picked = _time;
+    var picked = initial;
     final done = await showGlassSheet<bool>(
       context,
       (ctx) => SafeArea(
@@ -223,7 +231,7 @@ class _HabitEditorViewState extends State<HabitEditorView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Remind me at',
+                title,
                 style: Theme.of(
                   ctx,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -237,8 +245,8 @@ class _HabitEditorViewState extends State<HabitEditorView> {
                     2000,
                     1,
                     1,
-                    _time.hour,
-                    _time.minute,
+                    initial.hour,
+                    initial.minute,
                   ),
                   onDateTimeChanged: (d) =>
                       picked = TimeOfDay(hour: d.hour, minute: d.minute),
@@ -253,7 +261,47 @@ class _HabitEditorViewState extends State<HabitEditorView> {
         ),
       ),
     );
-    if (done == true && mounted) setState(() => _time = picked);
+    return done == true ? picked : null;
+  }
+
+  /// A time row: tap to pick, the x clears it.
+  Widget _timeRow({
+    required IconData icon,
+    required String title,
+    required String sheetTitle,
+    required TimeOfDay? value,
+    required ValueChanged<TimeOfDay?> onChanged,
+  }) {
+    return GlassRow(
+      leading: Icon(icon),
+      title: title,
+      value: value?.format(context) ?? 'None',
+      trailing: value == null
+          ? null
+          : Semantics(
+              // Its own node, so VoiceOver reaches it apart from the row.
+              container: true,
+              button: true,
+              label: 'Clear $title',
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onChanged(null),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.cancel_rounded,
+                    size: 20,
+                    color: GlassTokens.of(context).muted,
+                  ),
+                ),
+              ),
+            ),
+      onTap: () async {
+        final picked = await _pickTime(sheetTitle, value);
+        if (picked != null && mounted) onChanged(picked);
+      },
+    );
   }
 
   Future<void> _pickCharity() async {
@@ -350,7 +398,8 @@ class _HabitEditorViewState extends State<HabitEditorView> {
         UpdateHabitReq(
           task: _task.text.trim(),
           daysOfWeek: days,
-          notificationTime: _timeWire,
+          habitTime: _wire(_habitTime),
+          notificationTime: _wire(_reminder, seconds: true),
           stake: _stakeWire,
           charityId: charityId,
           enabled: _enabled,
@@ -363,7 +412,8 @@ class _HabitEditorViewState extends State<HabitEditorView> {
         CreateHabitReq(
           task: _task.text.trim(),
           daysOfWeek: days,
-          notificationTime: _timeWire,
+          habitTime: _wire(_habitTime),
+          notificationTime: _wire(_reminder, seconds: true),
           stake: _stakeWire,
           charityId: charityId,
           timezone: tz,
@@ -616,7 +666,7 @@ class _HabitEditorViewState extends State<HabitEditorView> {
     }
   }
 
-  /// "Weekdays · reminder at 22:00 · nothing at stake", under the name.
+  /// "Weekdays · at 07:00 · nothing at stake", under the name.
   String _summary(BuildContext context) {
     const weekdays = {'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'};
     final String days;
@@ -644,7 +694,12 @@ class _HabitEditorViewState extends State<HabitEditorView> {
       (null, final f?) => '$f if you miss',
       (final m?, final f?) => '$m and $f if you miss',
     };
-    return '$days · reminder at ${_time.format(context)} · $stake';
+    final time = _habitTime ?? _reminder;
+    return [
+      days,
+      if (time != null) 'at ${time.format(context)}',
+      stake,
+    ].join(' · ');
   }
 
   @override
@@ -744,13 +799,24 @@ class _HabitEditorViewState extends State<HabitEditorView> {
           ),
         ),
         GlassSection(
-          title: 'Reminder',
+          title: 'Time',
+          footer:
+              'Habit time places it in Morning, Afternoon or Evening on '
+              'Today. The day still ends at midnight.',
           children: [
-            GlassRow(
-              leading: const Icon(Icons.notifications_none_rounded),
+            _timeRow(
+              icon: Icons.schedule_rounded,
+              title: 'Habit time',
+              sheetTitle: 'I plan to do it at',
+              value: _habitTime,
+              onChanged: (t) => setState(() => _habitTime = t),
+            ),
+            _timeRow(
+              icon: Icons.notifications_none_rounded,
               title: 'Remind me at',
-              value: _time.format(context),
-              onTap: _pickTime,
+              sheetTitle: 'Remind me at',
+              value: _reminder,
+              onChanged: (t) => setState(() => _reminder = t),
             ),
           ],
         ),

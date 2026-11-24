@@ -1,6 +1,7 @@
 // GENERATED — do not edit by hand. Models-only barrel.
 // The Retrofit/dio clients swagger_parser emits are dropped; see scripts/generate-sdk.sh.
 // Regenerate with: pls generate:sdk
+export 'models/assign_strava_activity_req.dart';
 export 'models/award_weekly_req.dart';
 export 'models/award_weekly_res.dart';
 export 'models/bind_proof_req.dart';
@@ -30,6 +31,7 @@ export 'models/friend_candidate_res.dart';
 export 'models/friend_invite_res.dart';
 export 'models/friend_relation_res.dart';
 export 'models/friend_request_res.dart';
+export 'models/friend_request_state_res.dart';
 export 'models/friend_requests_res.dart';
 export 'models/friend_res.dart';
 export 'models/friend_stake_res.dart';
@@ -42,6 +44,7 @@ export 'models/habit_status_res.dart';
 export 'models/habit_version_meta_res.dart';
 export 'models/habit_version_res.dart';
 export 'models/inbox_count_res.dart';
+export 'models/inbox_friend_request_res.dart';
 export 'models/inbox_notification_res.dart';
 export 'models/info.dart';
 export 'models/link_nfc_tag_req.dart';
@@ -56,6 +59,7 @@ export 'models/proof_binding_res.dart';
 export 'models/protection_balance_res.dart';
 export 'models/reorder_habits_req.dart';
 export 'models/reorder_habits_res.dart';
+export 'models/resolve_friend_request_req.dart';
 export 'models/routine_res.dart';
 export 'models/run_disbursement_res.dart';
 export 'models/send_friend_request_req.dart';
@@ -63,6 +67,7 @@ export 'models/set_charity_causes_req.dart';
 export 'models/set_friend_watchers_req.dart';
 export 'models/skip_habit_req.dart';
 export 'models/stake_res.dart';
+export 'models/strava_activity_res.dart';
 export 'models/strava_connect_url_res.dart';
 export 'models/strava_connection_res.dart';
 export 'models/subscribe_req.dart';

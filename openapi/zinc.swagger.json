@@ -669,6 +669,39 @@
         }
       }
     },
+    "/api/v{version}/Charity/{id}/decommission": {
+      "post": {
+        "tags": ["Charity"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "The requested API version",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "default": "1.0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/v{version}/Charity/supported-countries": {
       "get": {
         "tags": ["Charity"],
@@ -1451,6 +1484,133 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FriendRelationRes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v{version}/Friend/{userId}/requests/{requestId}": {
+      "get": {
+        "tags": ["Friend"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "The requested API version",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "default": "1.0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestStateRes"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestStateRes"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestStateRes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v{version}/Friend/{userId}/requests/{requestId}/resolve": {
+      "post": {
+        "tags": ["Friend"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "The requested API version",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "default": "1.0"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveFriendRequestReq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestStateRes"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestStateRes"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestStateRes"
                 }
               }
             }
@@ -4089,6 +4249,159 @@
         }
       }
     },
+    "/api/v{version}/Strava/{userId}/activities": {
+      "get": {
+        "tags": ["Strava"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "The requested API version",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "default": "1.0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StravaActivityRes"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StravaActivityRes"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StravaActivityRes"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v{version}/Strava/{userId}/activities/{activityId}/habit": {
+      "put": {
+        "tags": ["Strava"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "The requested API version",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "default": "1.0"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignStravaActivityReq"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignStravaActivityReq"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignStravaActivityReq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StravaActivityRes"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StravaActivityRes"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StravaActivityRes"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v{version}/Strava/webhook": {
       "get": {
         "tags": ["Strava"],
@@ -5420,6 +5733,17 @@
         },
         "additionalProperties": false
       },
+      "AssignStravaActivityReq": {
+        "type": "object",
+        "properties": {
+          "habitId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AwardWeeklyReq": {
         "type": "object",
         "properties": {
@@ -5771,6 +6095,10 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "habitTime": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5919,9 +6247,13 @@
         "additionalProperties": false
       },
       "FriendRequestRes": {
-        "required": ["createdAtUtc"],
+        "required": ["createdAtUtc", "requestId"],
         "type": "object",
         "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "userId": {
             "type": "string",
             "nullable": true
@@ -5933,6 +6265,30 @@
           "createdAtUtc": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FriendRequestStateRes": {
+        "required": ["createdAtUtc", "requestId", "status"],
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6135,6 +6491,10 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "habitTime": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6263,6 +6623,10 @@
           "deadlineTime": {
             "type": "string",
             "nullable": true
+          },
+          "habitTime": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6274,6 +6638,27 @@
           "count": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "InboxFriendRequestRes": {
+        "required": ["status"],
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "resolvedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6313,6 +6698,14 @@
           "readAtUtc": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "friendRequest": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InboxFriendRequestRes"
+              }
+            ],
             "nullable": true
           }
         },
@@ -6618,6 +7011,17 @@
         },
         "additionalProperties": false
       },
+      "ResolveFriendRequestReq": {
+        "required": ["decision"],
+        "type": "object",
+        "properties": {
+          "decision": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "RoutineRes": {
         "required": ["id"],
         "type": "object",
@@ -6705,6 +7109,43 @@
           "currency": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StravaActivityRes": {
+        "required": ["locked", "manual", "pinned", "startUtc"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "sportType": {
+            "type": "string",
+            "nullable": true
+          },
+          "startUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "manual": {
+            "type": "boolean"
+          },
+          "habitId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "locked": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -6944,6 +7385,10 @@
             "nullable": true
           },
           "deadlineTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "habitTime": {
             "type": "string",
             "nullable": true
           }

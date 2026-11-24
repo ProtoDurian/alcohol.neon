@@ -16,10 +16,9 @@ class VacationRes {
     this.timezone,
     this.createdAt,
   });
-
-  factory VacationRes.fromJson(Map<String, Object?> json) =>
-      _$VacationResFromJson(json);
-
+  
+  factory VacationRes.fromJson(Map<String, Object?> json) => _$VacationResFromJson(json);
+  
   final String id;
   final String? userId;
   final String? startDate;

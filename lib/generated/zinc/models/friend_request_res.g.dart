@@ -8,6 +8,7 @@ part of 'friend_request_res.dart';
 
 FriendRequestRes _$FriendRequestResFromJson(Map<String, dynamic> json) =>
     FriendRequestRes(
+      requestId: json['requestId'] as String,
       createdAtUtc: DateTime.parse(json['createdAtUtc'] as String),
       userId: json['userId'] as String?,
       username: json['username'] as String?,
@@ -15,6 +16,7 @@ FriendRequestRes _$FriendRequestResFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$FriendRequestResToJson(FriendRequestRes instance) =>
     <String, dynamic>{
+      'requestId': instance.requestId,
       'userId': instance.userId,
       'username': instance.username,
       'createdAtUtc': instance.createdAtUtc.toIso8601String(),

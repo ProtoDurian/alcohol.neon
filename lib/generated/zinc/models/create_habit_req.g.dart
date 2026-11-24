@@ -18,6 +18,7 @@ CreateHabitReq _$CreateHabitReqFromJson(Map<String, dynamic> json) =>
       timezone: json['timezone'] as String?,
       deadlineTime: json['deadlineTime'] as String?,
       routineId: json['routineId'] as String?,
+      habitTime: json['habitTime'] as String?,
     );
 
 Map<String, dynamic> _$CreateHabitReqToJson(CreateHabitReq instance) =>
@@ -30,4 +31,5 @@ Map<String, dynamic> _$CreateHabitReqToJson(CreateHabitReq instance) =>
       'timezone': instance.timezone,
       'deadlineTime': instance.deadlineTime,
       'routineId': instance.routineId,
+      'habitTime': instance.habitTime,
     };

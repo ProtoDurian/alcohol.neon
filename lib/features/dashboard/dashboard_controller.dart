@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../config/app_config.dart';
+import '../../core/date_format.dart';
 import '../../core/launch_timeline.dart';
 import '../../core/problem.dart';
 import '../../data/execution_repository.dart';
 import '../../data/habit_repository.dart';
+import '../../generated/zinc/models/habit_execution_res.dart';
 import '../../generated/zinc/models/habit_overview_habit_res.dart';
 import '../../generated/zinc/models/habit_overview_response.dart';
 import '../../services/live_activity_service.dart';
@@ -184,6 +186,49 @@ class DashboardController extends ChangeNotifier {
     }
   }
 
+  /// The user's today: the server's habit-local date, else the phone's.
+  DateTime get today {
+    for (final h in habits) {
+      final d = tryParseStandardDate(h.status.today);
+      if (d != null) return d;
+    }
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  // Past days for the date strip: zinc's executions on that day, keyed by
+  // `dd-MM-yyyy`. Loaded when a day is opened; kept until the next load.
+  final Map<String, List<HabitExecutionRes>> _pastDays = {};
+  final Map<String, Problem> _pastErrors = {};
+  final Set<String> _pastLoading = {};
+
+  List<HabitExecutionRes>? executionsOn(DateTime day) =>
+      _pastDays[formatStandardDate(day)];
+  Problem? pastError(DateTime day) => _pastErrors[formatStandardDate(day)];
+  bool pastLoading(DateTime day) =>
+      _pastLoading.contains(formatStandardDate(day));
+
+  /// Loads a past day's results (`GET /Habit/{userId}/executions?Date=`).
+  Future<void> loadDay(DateTime day) async {
+    final uid = userId;
+    final key = formatStandardDate(day);
+    if (!_current || uid == null || _pastLoading.contains(key)) return;
+    if (_pastDays.containsKey(key)) return;
+    _pastLoading.add(key);
+    _pastErrors.remove(key);
+    notifyListeners();
+    final res = await _executions.onDate(uid, date: key, limit: 100);
+    if (!_current) return;
+    _pastLoading.remove(key);
+    switch (res) {
+      case Ok(:final value):
+        _pastDays[key] = value;
+      case Err(:final problem):
+        _pastErrors[key] = problem;
+    }
+    notifyListeners();
+  }
+
   String? get totalDebt => _overview?.totalDebt;
 
   int get skipsLeft {
@@ -238,6 +283,7 @@ class DashboardController extends ChangeNotifier {
         unawaited(_session.cache.saveOverview(uid, value));
         LaunchTimeline.mark('today-refreshed');
         _settled.clear();
+        _pastDays.clear();
         _refreshError = null;
         _phase = DashboardPhase.ready;
         unawaited(_syncReminders());

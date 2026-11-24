@@ -19,6 +19,11 @@ InboxNotificationRes _$InboxNotificationResFromJson(
   readAtUtc: json['readAtUtc'] == null
       ? null
       : DateTime.parse(json['readAtUtc'] as String),
+  friendRequest: json['friendRequest'] == null
+      ? null
+      : InboxFriendRequestRes.fromJson(
+          json['friendRequest'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$InboxNotificationResToJson(
@@ -32,4 +37,5 @@ Map<String, dynamic> _$InboxNotificationResToJson(
   'data': instance.data,
   'createdAtUtc': instance.createdAtUtc.toIso8601String(),
   'readAtUtc': instance.readAtUtc?.toIso8601String(),
+  'friendRequest': instance.friendRequest,
 };

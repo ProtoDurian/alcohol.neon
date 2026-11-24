@@ -8,11 +8,12 @@ part 'change_tier_req.g.dart';
 
 @JsonSerializable()
 class ChangeTierReq {
-  const ChangeTierReq({this.tier});
-
-  factory ChangeTierReq.fromJson(Map<String, Object?> json) =>
-      _$ChangeTierReqFromJson(json);
-
+  const ChangeTierReq({
+    this.tier,
+  });
+  
+  factory ChangeTierReq.fromJson(Map<String, Object?> json) => _$ChangeTierReqFromJson(json);
+  
   final String? tier;
 
   Map<String, Object?> toJson() => _$ChangeTierReqToJson(this);

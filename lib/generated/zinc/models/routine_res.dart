@@ -8,11 +8,14 @@ part 'routine_res.g.dart';
 
 @JsonSerializable()
 class RoutineRes {
-  const RoutineRes({required this.id, this.userId, this.name});
-
-  factory RoutineRes.fromJson(Map<String, Object?> json) =>
-      _$RoutineResFromJson(json);
-
+  const RoutineRes({
+    required this.id,
+    this.userId,
+    this.name,
+  });
+  
+  factory RoutineRes.fromJson(Map<String, Object?> json) => _$RoutineResFromJson(json);
+  
   final String id;
   final String? userId;
   final String? name;

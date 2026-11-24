@@ -31,11 +31,11 @@ class HabitOverviewHabitRes {
     this.proof,
     this.routineId,
     this.sortOrder,
+    this.habitTime,
   });
-
-  factory HabitOverviewHabitRes.fromJson(Map<String, Object?> json) =>
-      _$HabitOverviewHabitResFromJson(json);
-
+  
+  factory HabitOverviewHabitRes.fromJson(Map<String, Object?> json) => _$HabitOverviewHabitResFromJson(json);
+  
   final String? id;
   final String? name;
   final String? notificationTime;
@@ -53,6 +53,7 @@ class HabitOverviewHabitRes {
   final String? proof;
   final String? routineId;
   final int? sortOrder;
+  final String? habitTime;
 
   Map<String, Object?> toJson() => _$HabitOverviewHabitResToJson(this);
 }

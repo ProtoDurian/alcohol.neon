@@ -18,10 +18,9 @@ class NfcTagResolutionRes {
     this.today,
     this.todayExecution,
   });
-
-  factory NfcTagResolutionRes.fromJson(Map<String, Object?> json) =>
-      _$NfcTagResolutionResFromJson(json);
-
+  
+  factory NfcTagResolutionRes.fromJson(Map<String, Object?> json) => _$NfcTagResolutionResFromJson(json);
+  
   final NfcTagRes tag;
   final HabitVersionRes habitVersion;
   final String? today;

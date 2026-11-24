@@ -14,10 +14,9 @@ class ConfigurationPrincipalRes {
     this.timezone,
     this.defaultCharityId,
   });
-
-  factory ConfigurationPrincipalRes.fromJson(Map<String, Object?> json) =>
-      _$ConfigurationPrincipalResFromJson(json);
-
+  
+  factory ConfigurationPrincipalRes.fromJson(Map<String, Object?> json) => _$ConfigurationPrincipalResFromJson(json);
+  
   final String? id;
   final String? userId;
   final String? timezone;

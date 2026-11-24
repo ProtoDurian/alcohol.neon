@@ -8,11 +8,12 @@ part 'complete_habit_req.g.dart';
 
 @JsonSerializable()
 class CompleteHabitReq {
-  const CompleteHabitReq({this.notes});
-
-  factory CompleteHabitReq.fromJson(Map<String, Object?> json) =>
-      _$CompleteHabitReqFromJson(json);
-
+  const CompleteHabitReq({
+    this.notes,
+  });
+  
+  factory CompleteHabitReq.fromJson(Map<String, Object?> json) => _$CompleteHabitReqFromJson(json);
+  
   final String? notes;
 
   Map<String, Object?> toJson() => _$CompleteHabitReqToJson(this);

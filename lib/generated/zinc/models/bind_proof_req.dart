@@ -8,11 +8,13 @@ part 'bind_proof_req.g.dart';
 
 @JsonSerializable()
 class BindProofReq {
-  const BindProofReq({this.pluginKey, this.settings});
-
-  factory BindProofReq.fromJson(Map<String, Object?> json) =>
-      _$BindProofReqFromJson(json);
-
+  const BindProofReq({
+    this.pluginKey,
+    this.settings,
+  });
+  
+  factory BindProofReq.fromJson(Map<String, Object?> json) => _$BindProofReqFromJson(json);
+  
   final String? pluginKey;
   final String? settings;
 

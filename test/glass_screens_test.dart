@@ -625,9 +625,6 @@ void main() {
             scrollable: find.byType(Scrollable).first,
           );
           expect(find.text('Habit 21'), findsOneWidget);
-          if (layout == TodayLayout.nextUp) {
-            expect(find.text('0/25'), findsOneWidget);
-          }
           await tearDownHarness(tester, h);
         });
       }

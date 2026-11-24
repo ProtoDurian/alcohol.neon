@@ -13,10 +13,9 @@ class ProtectionBalanceRes {
     required this.cap,
     this.userId,
   });
-
-  factory ProtectionBalanceRes.fromJson(Map<String, Object?> json) =>
-      _$ProtectionBalanceResFromJson(json);
-
+  
+  factory ProtectionBalanceRes.fromJson(Map<String, Object?> json) => _$ProtectionBalanceResFromJson(json);
+  
   final String? userId;
   final int balance;
   final int cap;
