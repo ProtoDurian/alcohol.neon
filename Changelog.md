@@ -1,3 +1,16 @@
+## [1.31.0](https://github.com/ProtoDurian/alcohol.neon/compare/v1.30.1...v1.31.0) (2026-11-24)
+
+
+### ✨ Features ✨
+
+* load the Owed screen from zinc's owed list ([8efa49d](https://github.com/ProtoDurian/alcohol.neon/commit/8efa49d8d9e32850ec573601888cea7431c2f804))
+* time-of-day tabs, date strip and Owed screen on Today ([da87f52](https://github.com/ProtoDurian/alcohol.neon/commit/da87f521000ba816ee659cd2e61e335a67ed69a0))
+
+
+### 🐛 Bug Fixes 🐛
+
+* keep the collapsed Today title clear of the header buttons ([a2f72f9](https://github.com/ProtoDurian/alcohol.neon/commit/a2f72f9cfe24a1f4d6505931c345c20d1d7b3d3c))
+
 ## [1.30.1](https://github.com/ProtoDurian/alcohol.neon/compare/v1.30.0...v1.30.1) (2026-11-20)
 
 
