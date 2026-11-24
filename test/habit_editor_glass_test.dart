@@ -179,11 +179,23 @@ void main() {
       const HabitEditorView(habitId: 'h1'),
       platform: TargetPlatform.android,
     );
-    expect(find.textContaining('Mon · reminder at'), findsOneWidget);
+    expect(find.textContaining('Mon · at '), findsOneWidget);
+    // An edit loads the saved reminder; the habit time stays unset.
+    expect(find.text('None'), findsOneWidget);
 
     await tester.tap(find.bySemanticsLabel('Wed'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Mon, Wed · reminder at'), findsOneWidget);
+    expect(find.textContaining('Mon, Wed · at '), findsOneWidget);
+
+    // Clearing the reminder leaves the habit with no time at all.
+    await tester.scrollUntilVisible(
+      find.byIcon(Icons.cancel_rounded),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.bySemanticsLabel('Clear Remind me at'));
+    await tester.pumpAndSettle();
+    expect(find.text('None'), findsNWidgets(2));
 
     await tester.scrollUntilVisible(
       find.text('Pause this habit'),
@@ -203,6 +215,9 @@ void main() {
     final body = jsonDecode(put.body) as Map<String, Object?>;
     expect(body['daysOfWeek'], ['Monday', 'Wednesday']);
     expect(body['enabled'], isFalse);
+    expect(body['notificationTime'], isNull);
+    expect(body['habitTime'], isNull);
+    expect(body.containsKey('deadlineTime'), isFalse);
     await finish(tester, h);
   });
 

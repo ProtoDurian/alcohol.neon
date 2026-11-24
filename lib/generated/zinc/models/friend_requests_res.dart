@@ -10,11 +10,13 @@ part 'friend_requests_res.g.dart';
 
 @JsonSerializable()
 class FriendRequestsRes {
-  const FriendRequestsRes({this.incoming, this.outgoing});
-
-  factory FriendRequestsRes.fromJson(Map<String, Object?> json) =>
-      _$FriendRequestsResFromJson(json);
-
+  const FriendRequestsRes({
+    this.incoming,
+    this.outgoing,
+  });
+  
+  factory FriendRequestsRes.fromJson(Map<String, Object?> json) => _$FriendRequestsResFromJson(json);
+  
   final List<FriendRequestRes>? incoming;
   final List<FriendRequestRes>? outgoing;
 

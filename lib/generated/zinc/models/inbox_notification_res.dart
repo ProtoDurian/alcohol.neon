@@ -4,6 +4,8 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+import 'inbox_friend_request_res.dart';
+
 part 'inbox_notification_res.g.dart';
 
 @JsonSerializable()
@@ -17,11 +19,11 @@ class InboxNotificationRes {
     this.actorUserId,
     this.data,
     this.readAtUtc,
+    this.friendRequest,
   });
-
-  factory InboxNotificationRes.fromJson(Map<String, Object?> json) =>
-      _$InboxNotificationResFromJson(json);
-
+  
+  factory InboxNotificationRes.fromJson(Map<String, Object?> json) => _$InboxNotificationResFromJson(json);
+  
   final String id;
   final String? kind;
   final String? title;
@@ -30,6 +32,7 @@ class InboxNotificationRes {
   final String? data;
   final DateTime createdAtUtc;
   final DateTime? readAtUtc;
+  final InboxFriendRequestRes? friendRequest;
 
   Map<String, Object?> toJson() => _$InboxNotificationResToJson(this);
 }

@@ -282,6 +282,12 @@ void main() {
           -200,
           scrollable: find.byType(Scrollable).first,
         );
+        // Centred, so the pinned title bar doesn't cover it.
+        await Scrollable.ensureVisible(
+          tester.element(charityRow),
+          alignment: 0.5,
+        );
+        await tester.pumpAndSettle();
         await tester.tap(charityRow);
         await tester.pumpAndSettle();
         await tester.tap(find.text('Furkids'));
@@ -588,7 +594,7 @@ void main() {
           find.textContaining('do not submit the action again'),
           findsOneWidget,
         );
-        final status = find.text(skip ? 'Skipped today' : 'Completed today');
+        final status = find.text(skip ? 'Skipped' : 'Done');
         await tester.ensureVisible(status);
         expect(status, findsOneWidget);
         expect(find.text('Complete'), findsNothing);
@@ -630,7 +636,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Try later'), findsOneWidget);
     expect(find.text('Complete'), findsOneWidget);
-    expect(find.text('Completed today'), findsNothing);
+    expect(find.text('Done'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
     h.dispose();
   });
@@ -682,7 +688,7 @@ void main() {
       expect(find.text('Done!'), findsOneWidget);
       await tester.tap(find.text('Back to dashboard'));
       await tester.pumpAndSettle();
-      expect(find.text('Completed today'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
       expect(find.text('Complete'), findsNothing);
       expect(overviewCalls, 2);
       await tester.pumpWidget(const SizedBox.shrink());

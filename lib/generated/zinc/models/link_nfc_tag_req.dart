@@ -8,11 +8,12 @@ part 'link_nfc_tag_req.g.dart';
 
 @JsonSerializable()
 class LinkNfcTagReq {
-  const LinkNfcTagReq({required this.habitId});
-
-  factory LinkNfcTagReq.fromJson(Map<String, Object?> json) =>
-      _$LinkNfcTagReqFromJson(json);
-
+  const LinkNfcTagReq({
+    required this.habitId,
+  });
+  
+  factory LinkNfcTagReq.fromJson(Map<String, Object?> json) => _$LinkNfcTagReqFromJson(json);
+  
   final String habitId;
 
   Map<String, Object?> toJson() => _$LinkNfcTagReqToJson(this);

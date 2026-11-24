@@ -18,10 +18,9 @@ class CreateCharityReq {
     this.websiteUrl,
     this.logoUrl,
   });
-
-  factory CreateCharityReq.fromJson(Map<String, Object?> json) =>
-      _$CreateCharityReqFromJson(json);
-
+  
+  factory CreateCharityReq.fromJson(Map<String, Object?> json) => _$CreateCharityReqFromJson(json);
+  
   final String? name;
   final String? slug;
   final String? mission;

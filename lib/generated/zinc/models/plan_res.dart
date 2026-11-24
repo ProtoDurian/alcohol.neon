@@ -18,10 +18,9 @@ class PlanRes {
     this.currency,
     this.habitsMax,
   });
-
-  factory PlanRes.fromJson(Map<String, Object?> json) =>
-      _$PlanResFromJson(json);
-
+  
+  factory PlanRes.fromJson(Map<String, Object?> json) => _$PlanResFromJson(json);
+  
   final String? key;
   final int priceCents;
   final String? currency;

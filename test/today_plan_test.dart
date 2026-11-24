@@ -1,4 +1,5 @@
 import 'package:alcohol_neon/features/dashboard/today_plan.dart';
+import 'package:alcohol_neon/generated/zinc/models/habit_execution_res.dart';
 import 'package:alcohol_neon/generated/zinc/models/habit_overview_habit_res.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,9 +13,15 @@ HabitOverviewHabitRes habit(
   String? deadlineUtc,
   int? sortOrder,
   String? name,
+  String? habitTime,
+  String? reminder,
+  String? proof,
 }) => HabitOverviewHabitRes.fromJson({
   'id': id,
   'name': name ?? id,
+  'habitTime': habitTime,
+  'notificationTime': reminder,
+  'proof': proof,
   'sortOrder': ?sortOrder,
   'enabled': enabled,
   'days': List.generate(7, (i) => i == 1 ? scheduledToday : !scheduledToday),
@@ -36,119 +43,183 @@ HabitOverviewHabitRes habit(
 void main() {
   final loadedAt = DateTime(2026, 11, 9, 18);
   String? serverStatus(HabitOverviewHabitRes h) => h.status.todayStatus;
+  TodayPlan plan(List<HabitOverviewHabitRes> habits) =>
+      buildTodayPlan(habits, todayStatus: serverStatus, loadedAt: loadedAt);
+  List<String?> ids(List<TodayItem> items) => [
+    for (final i in items) i.habit.id,
+  ];
 
-  test('lists follow the saved order; Next up is still the soonest', () {
-    // Deadlines 09:00, 21:00 and 12:00 local, so deadline order differs from
-    // both the saved order and the list order.
-    final plan = buildTodayPlan(
-      [
-        habit('two', sortOrder: 2, minutesLeft: 15 * 60),
-        habit('zero', sortOrder: 0, minutesLeft: 3 * 60),
-        habit('one', sortOrder: 1, minutesLeft: 18 * 60),
-      ],
-      todayStatus: serverStatus,
-      loadedAt: DateTime(2026, 11, 9, 6),
-    );
-    expect(plan.todo.map((i) => i.habit.id), ['zero', 'one', 'two']);
-    expect(plan.next!.habit.id, 'zero');
-    expect(plan.next!.deadline, DateTime(2026, 11, 9, 9));
-    expect(plan.soonest.map((i) => i.habit.id), ['zero', 'two', 'one']);
+  group('tabs', () {
+    test('each side of 12:00 and 18:00, and no time at all', () {
+      expect(tabOf(habit('a', habitTime: '00:00')), TodayTab.morning);
+      expect(tabOf(habit('a', habitTime: '11:59')), TodayTab.morning);
+      expect(tabOf(habit('a', habitTime: '12:00')), TodayTab.afternoon);
+      expect(tabOf(habit('a', habitTime: '17:59')), TodayTab.afternoon);
+      expect(tabOf(habit('a', habitTime: '18:00')), TodayTab.evening);
+      expect(tabOf(habit('a', habitTime: '23:59')), TodayTab.evening);
+      expect(tabOf(habit('a')), TodayTab.anytime);
+    });
+
+    test('reads HH:mm:ss, and falls back to the reminder time', () {
+      expect(tabOf(habit('a', habitTime: '11:59:59')), TodayTab.morning);
+      expect(tabOf(habit('a', reminder: '17:59:00')), TodayTab.afternoon);
+      expect(tabOf(habit('a', reminder: '18:00')), TodayTab.evening);
+      // The habit time wins over the reminder.
+      expect(
+        tabOf(habit('a', habitTime: '19:00', reminder: '08:00:00')),
+        TodayTab.evening,
+      );
+      // An unreadable time counts as none.
+      expect(tabOf(habit('a', habitTime: '25:00')), TodayTab.anytime);
+    });
+
+    test('a tab lists its habits in time order, All lists every one', () {
+      final p = plan([
+        habit('eve', habitTime: '18:00'),
+        habit('none'),
+        habit('noon', habitTime: '12:00'),
+        habit('late-am', habitTime: '11:59'),
+        habit('pm', reminder: '17:59:00'),
+      ]);
+      expect(ids(p.inTab(TodayTab.morning)), ['late-am']);
+      expect(ids(p.inTab(TodayTab.afternoon)), ['noon', 'pm']);
+      expect(ids(p.inTab(TodayTab.evening)), ['eve']);
+      expect(ids(p.inTab(TodayTab.anytime)), ['none']);
+      expect(ids(p.inTab(TodayTab.all)), [
+        'late-am',
+        'noon',
+        'pm',
+        'eve',
+        'none',
+      ]);
+    });
   });
 
-  test('the saved order, not the name, breaks a deadline tie', () {
-    final plan = buildTodayPlan(
-      [
-        habit('a', name: 'Alpha', sortOrder: 1),
-        habit('z', name: 'Zulu', sortOrder: 0),
-      ],
-      todayStatus: serverStatus,
-      loadedAt: loadedAt,
-    );
-    expect(plan.next!.habit.name, 'Zulu');
-  });
+  group('sort', () {
+    test('sort time first, no time last, ties by sortOrder then id', () {
+      final p = plan([
+        habit('none-b', sortOrder: 0),
+        habit('nine-z', habitTime: '09:00', sortOrder: 5),
+        habit('nine-y', habitTime: '09:00:00', sortOrder: 5),
+        habit('nine-a', reminder: '09:00:00', sortOrder: 6),
+        habit('seven', habitTime: '07:00', sortOrder: 9),
+        habit('none-a', sortOrder: 1),
+      ]);
+      expect(ids(p.items), [
+        'seven',
+        'nine-y',
+        'nine-z',
+        'nine-a',
+        'none-b',
+        'none-a',
+      ]);
+    });
 
-  test('done and not-today rows follow the saved order, not the list', () {
-    final plan = buildTodayPlan(
-      [
-        habit('rest-2', sortOrder: 5, scheduledToday: false),
-        habit('done-1', sortOrder: 3, status: 'succeeded'),
-        habit('rest-1', sortOrder: 1, scheduledToday: false),
-        habit('done-0', sortOrder: 0, status: 'failed'),
-        habit('done-2', sortOrder: 4, status: 'skip'),
-      ],
-      todayStatus: serverStatus,
-      loadedAt: loadedAt,
-    );
-    expect(plan.done.map((i) => i.habit.id), ['done-0', 'done-1', 'done-2']);
-    expect(plan.later.map((i) => i.habit.id), ['rest-1', 'rest-2']);
-  });
+    test('done habits keep their time slot; not-today ones are hidden', () {
+      final p = plan([
+        habit('eve', habitTime: '20:00'),
+        habit('done', habitTime: '08:00', status: 'succeeded'),
+        habit('rest', habitTime: '07:00', scheduledToday: false),
+        habit('missed', habitTime: '10:00', status: 'failed'),
+        habit('paused-today', habitTime: '09:00', enabled: false),
+        habit('paused-rest', enabled: false, scheduledToday: false),
+      ]);
+      expect(ids(p.items), ['done', 'paused-today', 'missed', 'eve']);
+      expect(ids(p.todo), ['eve']);
+      expect(ids(p.done), ['done', 'missed']);
+      expect(p.scheduled, 3);
+    });
 
-  test('without sortOrder (older zinc) the lists keep the server order', () {
-    final plan = buildTodayPlan(
-      [
-        habit('m', minutesLeft: 300),
-        habit('z', minutesLeft: 30),
-        habit('a', minutesLeft: 300),
-      ],
-      todayStatus: serverStatus,
-      loadedAt: loadedAt,
-    );
-    expect(plan.todo.map((i) => i.habit.id), ['m', 'z', 'a']);
-    // The deadline tie between m and a goes to the server's order.
-    expect(plan.soonest.map((i) => i.habit.id), ['z', 'm', 'a']);
+    test('Next up is the first open habit by time, not by deadline', () {
+      final p = buildTodayPlan(
+        [
+          habit('late-check', habitTime: '21:00', minutesLeft: 30),
+          habit('early', habitTime: '07:00', minutesLeft: 600),
+          habit('done', habitTime: '06:00', status: 'succeeded'),
+        ],
+        todayStatus: serverStatus,
+        loadedAt: DateTime(2026, 11, 9, 6),
+      );
+      expect(p.next!.habit.id, 'early');
+      expect(p.next!.deadline, DateTime(2026, 11, 9, 16));
+    });
+
+    test('without sortOrder (older zinc) ties keep the server order', () {
+      final p = plan([habit('m'), habit('z'), habit('a')]);
+      expect(ids(p.items), ['m', 'z', 'a']);
+    });
+
+    test('an unsaved reorder breaks ties before sortOrder', () {
+      final p = buildTodayPlan(
+        [
+          habit('a', sortOrder: 0),
+          habit('b', sortOrder: 1),
+          habit('t', habitTime: '08:00', sortOrder: 2),
+        ],
+        todayStatus: serverStatus,
+        loadedAt: loadedAt,
+        order: ['t', 'b', 'a'],
+      );
+      expect(ids(p.items), ['t', 'b', 'a']);
+    });
   });
 
   test('the server deadline wins over minutes left when present', () {
-    // 'early' has more minutes left but its stored check ends first.
-    final plan = buildTodayPlan(
-      [
-        habit('late', minutesLeft: 30),
-        habit('early', minutesLeft: 600, deadlineUtc: '2026-11-09T10:15:00Z'),
-      ],
+    final p = buildTodayPlan(
+      [habit('a', minutesLeft: 600, deadlineUtc: '2026-11-09T10:15:00Z')],
       todayStatus: serverStatus,
       loadedAt: DateTime.utc(2026, 11, 9, 10),
     );
-    expect(plan.next!.habit.id, 'early');
-    expect(plan.next!.deadline!.toUtc(), DateTime.utc(2026, 11, 9, 10, 15));
-  });
-
-  test('settled, rest, paused and missing statuses leave the todo list', () {
-    final plan = buildTodayPlan(
-      [
-        habit('done', status: 'succeeded'),
-        habit('missed', status: 'failed'),
-        habit('rest', scheduledToday: false),
-        // Paused wins even over a settled status.
-        habit('paused', status: 'succeeded', enabled: false),
-        habit('unknown', status: null),
-        habit('open'),
-      ],
-      todayStatus: serverStatus,
-      loadedAt: loadedAt,
-    );
-    expect(plan.todo.map((i) => i.habit.id), ['open']);
-    expect(
-      {for (final i in plan.done) i.habit.id: i.state},
-      {'done': TodayState.done, 'missed': TodayState.settled},
-    );
-    expect(
-      {for (final i in plan.later) i.habit.id: i.state},
-      {
-        'rest': TodayState.rest,
-        'paused': TodayState.paused,
-        'unknown': TodayState.unknown,
-      },
-    );
-    expect(plan.scheduled, 3);
+    expect(p.next!.deadline!.toUtc(), DateTime.utc(2026, 11, 9, 10, 15));
   });
 
   test('an acknowledged action overrides the stale server status', () {
-    final plan = buildTodayPlan(
+    final p = buildTodayPlan(
       [habit('a'), habit('b')],
       todayStatus: (h) => h.id == 'a' ? 'skip' : h.status.todayStatus,
       loadedAt: loadedAt,
     );
-    expect(plan.next!.habit.id, 'b');
-    expect(plan.done.single.state, TodayState.skipped);
+    expect(p.next!.habit.id, 'b');
+    expect(p.done.single.state, TodayState.skipped);
+  });
+
+  test("a past day: its weekday's habits with their results", () {
+    HabitExecutionRes ran(String id, String status) => HabitExecutionRes(
+      id: 'e-$id',
+      habitVersionId: 'v-$id',
+      date: '10-11-2026',
+      status: status,
+      paymentProcessed: false,
+    );
+    // Tuesday 10 Nov 2026; the helper's habits run on Mondays only unless
+    // scheduledToday is false (then every day but Monday).
+    final items = pastItems(
+      [
+        habit('mon-only', habitTime: '09:00'),
+        habit('done', habitTime: '20:00', scheduledToday: false),
+        habit('missed', habitTime: '07:00', scheduledToday: false),
+        habit('none', scheduledToday: false),
+      ],
+      DateTime(2026, 11, 10),
+      [ran('done', 'succeeded'), ran('missed', 'failed')],
+    );
+    expect(
+      {for (final i in items) i.habit.id: i.state},
+      {
+        'missed': TodayState.settled,
+        'done': TodayState.done,
+        'none': TodayState.unknown,
+      },
+    );
+    expect(ids(items), ['missed', 'done', 'none']);
+  });
+
+  test('row labels: proof, time and a short stake', () {
+    expect(proofLabel(habit('a', proof: 'strava')), 'Auto from Strava');
+    expect(proofLabel(habit('a', proof: 'nfc')), 'NFC tag');
+    expect(proofLabel(habit('a', proof: 'manual')), isNull);
+    expect(sortTimeLabel(habit('a', reminder: '07:05:00')), '07:05');
+    expect(sortTimeLabel(habit('a')), isNull);
+    expect(stakeShort(habit('a')), r'$1 at stake');
   });
 }

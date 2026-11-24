@@ -14,10 +14,9 @@ class NfcTagRes {
     this.userId,
     this.claimedAt,
   });
-
-  factory NfcTagRes.fromJson(Map<String, Object?> json) =>
-      _$NfcTagResFromJson(json);
-
+  
+  factory NfcTagRes.fromJson(Map<String, Object?> json) => _$NfcTagResFromJson(json);
+  
   final String? id;
   final String? userId;
   final String habitId;

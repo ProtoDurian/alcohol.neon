@@ -32,6 +32,7 @@ HabitOverviewHabitRes _$HabitOverviewHabitResFromJson(
   proof: json['proof'] as String?,
   routineId: json['routineId'] as String?,
   sortOrder: (json['sortOrder'] as num?)?.toInt(),
+  habitTime: json['habitTime'] as String?,
 );
 
 Map<String, dynamic> _$HabitOverviewHabitResToJson(
@@ -54,4 +55,5 @@ Map<String, dynamic> _$HabitOverviewHabitResToJson(
   'proof': instance.proof,
   'routineId': instance.routineId,
   'sortOrder': instance.sortOrder,
+  'habitTime': instance.habitTime,
 };

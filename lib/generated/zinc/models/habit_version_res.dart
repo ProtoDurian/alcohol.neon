@@ -20,11 +20,11 @@ class HabitVersionRes {
     this.charityId,
     this.timezone,
     this.deadlineTime,
+    this.habitTime,
   });
-
-  factory HabitVersionRes.fromJson(Map<String, Object?> json) =>
-      _$HabitVersionResFromJson(json);
-
+  
+  factory HabitVersionRes.fromJson(Map<String, Object?> json) => _$HabitVersionResFromJson(json);
+  
   final String id;
   final String habitId;
   final int version;
@@ -36,6 +36,7 @@ class HabitVersionRes {
   final String? charityId;
   final String? timezone;
   final String? deadlineTime;
+  final String? habitTime;
 
   Map<String, Object?> toJson() => _$HabitVersionResToJson(this);
 }

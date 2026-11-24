@@ -17,11 +17,11 @@ class UpdateHabitReq {
     this.charityId,
     this.timezone,
     this.deadlineTime,
+    this.habitTime,
   });
-
-  factory UpdateHabitReq.fromJson(Map<String, Object?> json) =>
-      _$UpdateHabitReqFromJson(json);
-
+  
+  factory UpdateHabitReq.fromJson(Map<String, Object?> json) => _$UpdateHabitReqFromJson(json);
+  
   final String? task;
   final List<String>? daysOfWeek;
   final String? notificationTime;
@@ -30,6 +30,7 @@ class UpdateHabitReq {
   final bool enabled;
   final String? timezone;
   final String? deadlineTime;
+  final String? habitTime;
 
   Map<String, Object?> toJson() => _$UpdateHabitReqToJson(this);
 }

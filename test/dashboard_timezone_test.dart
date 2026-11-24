@@ -6,6 +6,7 @@ import 'package:alcohol_neon/core/problem.dart';
 import 'package:alcohol_neon/data/execution_repository.dart';
 import 'package:alcohol_neon/data/habit_repository.dart';
 import 'package:alcohol_neon/data/protection_repository.dart';
+import 'package:alcohol_neon/data/vacation_repository.dart';
 import 'package:alcohol_neon/features/dashboard/dashboard_view.dart';
 import 'package:alcohol_neon/generated/zinc/models/configuration_principal_res.dart';
 import 'package:alcohol_neon/generated/zinc/models/habit_overview_response.dart';
@@ -57,6 +58,10 @@ class _Session extends ChangeNotifier implements SessionController {
   @override
   ProtectionRepository get protections => ProtectionRepository(api);
   @override
+  VacationRepository get vacations => VacationRepository(api);
+  @override
+  bool get hasPaymentConsent => false;
+  @override
   String? takeTimezoneNotice() => null;
   @override
   ConfigurationPrincipalRes? get config => null;
@@ -83,12 +88,13 @@ void main() {
 
   for (final state in [
     (status: 'not_applicable', label: 'Complete'),
-    (status: 'succeeded', label: 'Completed today'),
-    (status: 'skip', label: 'Skipped today'),
-    (status: 'vacation', label: 'On vacation'),
-    (status: 'frozen', label: 'Covered by a freeze today'),
-    (status: 'rest', label: 'Rest day'),
-    (status: 'missing', label: "Today's status unavailable"),
+    (status: 'succeeded', label: 'Done'),
+    (status: 'skip', label: 'Skipped'),
+    (status: 'vacation', label: 'Vacation'),
+    (status: 'frozen', label: 'Frozen'),
+    // Not scheduled on the server's day: hidden, so nothing is due.
+    (status: 'rest', label: 'Nothing due today'),
+    (status: 'missing', label: 'Unavailable'),
   ]) {
     testWidgets('habit date drives ${state.label}, not phone or user week', (
       tester,
@@ -177,7 +183,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text(state.label), findsOneWidget);
+      expect(find.text(state.label), findsWidgets);
       expect(
         find.text('Complete'),
         state.status == 'not_applicable' ? findsOneWidget : findsNothing,

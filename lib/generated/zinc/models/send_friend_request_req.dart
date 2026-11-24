@@ -8,11 +8,12 @@ part 'send_friend_request_req.g.dart';
 
 @JsonSerializable()
 class SendFriendRequestReq {
-  const SendFriendRequestReq({this.toUserId});
-
-  factory SendFriendRequestReq.fromJson(Map<String, Object?> json) =>
-      _$SendFriendRequestReqFromJson(json);
-
+  const SendFriendRequestReq({
+    this.toUserId,
+  });
+  
+  factory SendFriendRequestReq.fromJson(Map<String, Object?> json) => _$SendFriendRequestReqFromJson(json);
+  
   final String? toUserId;
 
   Map<String, Object?> toJson() => _$SendFriendRequestReqToJson(this);

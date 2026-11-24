@@ -89,7 +89,8 @@ class HabitRepository {
   Future<Result<HabitVersionRes>> create(String userId, CreateHabitReq req) {
     return _api.post(
       '$_base/$userId',
-      req.toJson(),
+      // Every day ends at local midnight; zinc ignores deadlineTime.
+      req.toJson()..remove('deadlineTime'),
       (j) => HabitVersionRes.fromJson(j as Map<String, Object?>),
     );
   }
@@ -102,7 +103,8 @@ class HabitRepository {
   ) {
     return _api.put(
       '$_base/$userId/$id',
-      req.toJson(),
+      // Every day ends at local midnight; zinc ignores deadlineTime.
+      req.toJson()..remove('deadlineTime'),
       (j) => HabitVersionRes.fromJson(j as Map<String, Object?>),
     );
   }

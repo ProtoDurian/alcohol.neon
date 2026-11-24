@@ -136,7 +136,7 @@ Map<String, Object?> widgetSchedule(TodayPlan plan, DateTime now) => {
   'done': plan.done.length,
   'total': plan.scheduled,
   'items': [
-    for (final i in plan.soonest)
+    for (final i in plan.todo)
       {
         'id': i.habit.version.id,
         'name': i.habit.name ?? 'Habit',

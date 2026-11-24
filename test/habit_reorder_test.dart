@@ -323,7 +323,8 @@ void main() {
 
     /// Long-press [name]'s row, then drag it so its centre lands on [to].
     Future<void> drag(WidgetTester tester, String name, Offset to) async {
-      final from = tester.getCenter(find.text(name));
+      // .last: Next up's card also shows the first open habit's name.
+      final from = tester.getCenter(find.text(name).last);
       final g = await tester.startGesture(from);
       await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
       final steps = 10;
@@ -336,7 +337,7 @@ void main() {
     }
 
     double y(WidgetTester tester, String name) =>
-        tester.getCenter(find.text(name)).dy;
+        tester.getCenter(find.text(name).last).dy;
 
     Future<void> done(WidgetTester tester, SessionHarness h) async {
       await tester.pumpWidget(const SizedBox.shrink());
@@ -345,12 +346,9 @@ void main() {
 
     for (final platform in platforms) {
       group(platform.name, () {
-        testWidgets('Next up: drag the last Later today row to the top', (
-          tester,
-        ) async {
+        testWidgets('Next up: drag the last row above Bravo', (tester) async {
           final zinc = _Zinc(alphaFirst: true);
           final h = await pumpToday(tester, zinc, platform);
-          expect(find.text('Later today'), findsOneWidget);
           expect(y(tester, 'Bravo'), lessThan(y(tester, 'Charlie')));
 
           await drag(tester, 'Charlie', tester.getTopLeft(find.text('Bravo')));
@@ -364,8 +362,8 @@ void main() {
           await done(tester, h);
         });
 
-        testWidgets('Progress: open rows reorder; a drop past done lands '
-            'as the last open row', (tester) async {
+        testWidgets('Progress: done rows keep their slot and move with '
+            'the rest', (tester) async {
           final zinc = _Zinc();
           final h = await pumpToday(
             tester,
@@ -373,17 +371,21 @@ void main() {
             platform,
             layout: TodayLayout.progressList,
           );
+          // One list in the saved order: Alpha, X-ray (done), Bravo, Charlie.
+          expect(y(tester, 'Alpha'), lessThan(y(tester, 'X-ray')));
+          expect(y(tester, 'X-ray'), lessThan(y(tester, 'Bravo')));
           await drag(
             tester,
             'Alpha',
-            tester.getBottomLeft(find.text('X-ray')) + const Offset(0, 30),
+            tester.getBottomLeft(find.text('Charlie')) + const Offset(0, 30),
           );
+          // Yankee rests today: hidden, and it keeps its place.
           expect(zinc.puts, [
-            ['B', 'X', 'C', 'Y', 'A'],
+            ['X', 'B', 'C', 'Y', 'A'],
           ]);
+          expect(y(tester, 'X-ray'), lessThan(y(tester, 'Bravo')));
           expect(y(tester, 'Bravo'), lessThan(y(tester, 'Charlie')));
           expect(y(tester, 'Charlie'), lessThan(y(tester, 'Alpha')));
-          expect(y(tester, 'Alpha'), lessThan(y(tester, 'X-ray')));
           await done(tester, h);
         });
 
