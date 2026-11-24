@@ -638,13 +638,18 @@ class _LargeTitle extends SliverPersistentHeaderDelegate {
           left: 0,
           right: 0,
           height: _bar,
+          // Left-aligned, so it clears the owed, inbox and Profile buttons.
           child: Opacity(
             opacity: barOpacity,
-            child: Center(
-              child: Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
