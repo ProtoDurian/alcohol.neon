@@ -57,9 +57,14 @@ class _FriendsScaffold extends StatefulWidget {
 }
 
 class _FriendsScaffoldState extends State<_FriendsScaffold> {
+  late final AppLifecycleListener _lifecycle;
+
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(
+      onResume: () => context.read<FriendsController>().load(),
+    );
     final code = widget.inviteCode;
     if (code == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -67,6 +72,12 @@ class _FriendsScaffoldState extends State<_FriendsScaffold> {
       if (!mounted) return;
       showGlassToast(context, inviteResultMessage(res));
     });
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   @override
@@ -120,21 +131,25 @@ class _FriendsScaffoldState extends State<_FriendsScaffold> {
               for (final r in incoming)
                 _Person(
                   username: r.username,
-                  subtitle: 'Wants to be friends',
+                  subtitle: r.requestId == null
+                      ? 'Request unavailable'
+                      : 'Wants to be friends',
                   busy: c.isBusy(r.userId),
+                  actionsBelow: true,
                   actions: [
-                    GlassButton(
-                      label: 'Accept',
-                      compact: true,
-                      onPressed: () => c.accept(r.userId),
-                    ),
-                    const SizedBox(width: 6),
-                    GlassButton(
-                      label: 'Decline',
-                      compact: true,
-                      secondary: true,
-                      onPressed: () => c.deleteRequest(r.userId),
-                    ),
+                    if (r.requestId != null) ...[
+                      GlassButton(
+                        label: 'Accept',
+                        onPressed: () =>
+                            c.resolve(r, FriendRequestDecision.accept),
+                      ),
+                      GlassButton(
+                        label: 'Decline',
+                        secondary: true,
+                        onPressed: () =>
+                            c.resolve(r, FriendRequestDecision.decline),
+                      ),
+                    ],
                   ],
                 ),
             ],
@@ -169,15 +184,19 @@ class _FriendsScaffoldState extends State<_FriendsScaffold> {
               for (final r in outgoing)
                 _Person(
                   username: r.username,
-                  subtitle: 'Request sent',
+                  subtitle: r.requestId == null
+                      ? 'Request unavailable'
+                      : 'Request sent',
                   busy: c.isBusy(r.userId),
+                  actionsBelow: true,
                   actions: [
-                    GlassButton(
-                      label: 'Cancel',
-                      compact: true,
-                      secondary: true,
-                      onPressed: () => c.deleteRequest(r.userId),
-                    ),
+                    if (r.requestId != null)
+                      GlassButton(
+                        label: 'Cancel',
+                        secondary: true,
+                        onPressed: () =>
+                            c.resolve(r, FriendRequestDecision.cancel),
+                      ),
                   ],
                 ),
             ],
@@ -262,39 +281,44 @@ class _SearchResults extends StatelessWidget {
     return GlassSection(
       title: 'People',
       dividerIndent: 66,
-      children: [
-        for (final r in c.results)
-          _Person(
-            username: r.username,
-            subtitle: switch (r.relation) {
-              'friend' => 'Friends',
-              'outgoing' => 'Request sent',
-              'incoming' => 'Wants to be friends',
-              _ => null,
-            },
-            busy: c.isBusy(r.userId),
-            actions: [
-              ?switch (friendActionFor(r.relation)) {
-                FriendAction.add => GlassButton(
-                  label: 'Add',
-                  compact: true,
-                  onPressed: () => c.sendRequest(r.userId),
-                ),
-                FriendAction.cancel => GlassButton(
-                  label: 'Cancel',
-                  compact: true,
-                  secondary: true,
-                  onPressed: () => c.deleteRequest(r.userId),
-                ),
-                FriendAction.accept => GlassButton(
-                  label: 'Accept',
-                  compact: true,
-                  onPressed: () => c.accept(r.userId),
-                ),
-                FriendAction.none => null,
-              },
-            ],
+      children: [for (final r in c.results) _result(r)],
+    );
+  }
+
+  Widget _result(FriendCandidateRes r) {
+    // Capture the displayed occurrence. A later refresh must not retarget this
+    // button to a new request from the same person.
+    final request = c.requestFor(r.userId, outgoing: r.relation == 'outgoing');
+    final identified = request?.requestId != null;
+    return _Person(
+      username: r.username,
+      subtitle: switch (r.relation) {
+        'friend' => 'Friends',
+        'outgoing' => identified ? 'Request sent' : 'Request unavailable',
+        'incoming' =>
+          identified ? 'Wants to be friends' : 'Request unavailable',
+        _ => null,
+      },
+      busy: c.isBusy(r.userId),
+      actionsBelow: r.relation == 'incoming' || r.relation == 'outgoing',
+      actions: [
+        ?switch (friendActionFor(r.relation)) {
+          FriendAction.add => GlassButton(
+            label: 'Add',
+            compact: true,
+            onPressed: () => c.sendRequest(r.userId),
           ),
+          FriendAction.cancel when identified => GlassButton(
+            label: 'Cancel',
+            secondary: true,
+            onPressed: () => c.resolve(request!, FriendRequestDecision.cancel),
+          ),
+          FriendAction.accept when identified => GlassButton(
+            label: 'Accept',
+            onPressed: () => c.resolve(request!, FriendRequestDecision.accept),
+          ),
+          _ => null,
+        },
       ],
     );
   }
@@ -535,16 +559,18 @@ class _Person extends StatelessWidget {
   final String? subtitle;
   final bool busy;
   final List<Widget> actions;
+  final bool actionsBelow;
   const _Person({
     required this.username,
     this.subtitle,
     required this.busy,
     required this.actions,
+    this.actionsBelow = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GlassRow(
+    final row = GlassRow(
       leading: FriendAvatar(username),
       title: username.isEmpty ? 'Someone' : username,
       subtitle: subtitle,
@@ -553,9 +579,26 @@ class _Person extends StatelessWidget {
               dimension: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : actions.isEmpty
+          : actions.isEmpty || actionsBelow
           ? null
           : Row(mainAxisSize: MainAxisSize.min, children: actions),
+    );
+    if (!actionsBelow || busy || actions.isEmpty) return row;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(68, 0, 16, 12),
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 8,
+            children: [
+              for (final action in actions) IntrinsicWidth(child: action),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

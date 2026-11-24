@@ -23,6 +23,9 @@ class FriendsController extends ChangeNotifier {
     outgoing: [],
   );
   final _busy = <String>{};
+  final _retry = <String>{};
+  final _resolved = <String>{};
+  int _loadSeq = 0;
   bool _disposed = false;
 
   String _query = '';
@@ -41,6 +44,11 @@ class FriendsController extends ChangeNotifier {
   List<FriendRes> get friends => _friends;
   FriendRequestsRes get requests => _requests;
   bool isBusy(String userId) => _busy.contains(userId);
+
+  FriendRequestRes? requestFor(String userId, {required bool outgoing}) =>
+      (outgoing ? _requests.outgoing : _requests.incoming)
+          .where((r) => r.userId == userId)
+          .firstOrNull;
 
   String get query => _query;
   bool get searching => _searching;
@@ -67,6 +75,7 @@ class FriendsController extends ChangeNotifier {
   }
 
   Future<void> load() async {
+    final seq = ++_loadSeq;
     _error = null;
     if (_phase == FriendsPhase.error) _phase = FriendsPhase.loading;
     _notify();
@@ -74,10 +83,18 @@ class FriendsController extends ChangeNotifier {
     final requestsCall = _repo.requests(_userId);
     final friends = await friendsCall;
     final requests = await requestsCall;
+    if (_disposed || seq != _loadSeq) return;
     switch ((friends, requests)) {
       case (Ok(value: final f), Ok(value: final r)):
         _friends = f;
-        _requests = r;
+        _requests = FriendRequestsRes(
+          incoming: r.incoming
+              .where((r) => !_resolved.contains(r.requestId))
+              .toList(),
+          outgoing: r.outgoing
+              .where((r) => !_resolved.contains(r.requestId))
+              .toList(),
+        );
         _phase = FriendsPhase.ready;
       case (Err(:final problem), _) || (_, Err(:final problem)):
         if (_phase == FriendsPhase.loading) {
@@ -88,6 +105,7 @@ class FriendsController extends ChangeNotifier {
         }
     }
     _notify();
+    if (_phase == FriendsPhase.ready && _query.length >= 2) await _runSearch();
   }
 
   /// Debounced username-prefix search; zinc needs 2+ characters.
@@ -127,30 +145,75 @@ class FriendsController extends ChangeNotifier {
     String userId,
     Future<Result<Object?>> Function() call,
   ) async {
-    _busy.add(userId);
+    if (_disposed || !_busy.add(userId)) return false;
     _actionError = null;
     _notify();
     final res = await call();
-    _busy.remove(userId);
+    if (_disposed) return false;
     if (res case Err(:final problem)) {
+      _busy.remove(userId);
       _actionError = problem;
       _notify();
       return false;
     }
     await load();
-    if (_query.length >= 2) await _runSearch();
+    _busy.remove(userId);
+    _notify();
     return true;
   }
 
   Future<bool> sendRequest(String userId) =>
       _act(userId, () => _repo.sendRequest(_userId, userId));
 
-  Future<bool> accept(String userId) =>
-      _act(userId, () => _repo.accept(_userId, userId));
-
-  /// Declines an incoming request or cancels an outgoing one.
-  Future<bool> deleteRequest(String userId) =>
-      _act(userId, () => _repo.deleteRequest(_userId, userId));
+  Future<bool> resolve(
+    FriendRequestRes request,
+    FriendRequestDecision decision,
+  ) async {
+    final id = request.requestId;
+    if (id == null || _resolved.contains(id)) {
+      _actionError = Problem.local('Request unavailable');
+      _notify();
+      return false;
+    }
+    return _act(request.userId, () async {
+      if (_retry.contains(id)) {
+        final current = await _repo.request(_userId, id);
+        if (_disposed) return const Err(Problem.unauthenticated);
+        switch (current) {
+          case Ok(:final value) when value.pending:
+            _retry.remove(id);
+          case Ok():
+            _resolved.add(id);
+            await load();
+            return Err(Problem.local('That request is no longer pending.'));
+          case Err(:final problem):
+            if (problem.status == 404) {
+              _resolved.add(id);
+              await load();
+            }
+            return Err(problem);
+        }
+      }
+      final res = await _repo.resolve(_userId, id, decision);
+      switch (res) {
+        case Ok():
+          _retry.remove(id);
+          _resolved.add(id);
+        case Err(:final problem):
+          _retry.add(id);
+          if (problem.status == 404 || problem.status == 409) {
+            final current = await _repo.request(_userId, id);
+            if (current case Ok(:final value) when value.terminal) {
+              _resolved.add(id);
+            } else if (current case Err()) {
+              _resolved.add(id);
+            }
+            await load();
+          }
+      }
+      return res;
+    });
+  }
 
   Future<bool> remove(String userId) =>
       _act(userId, () => _repo.remove(_userId, userId));

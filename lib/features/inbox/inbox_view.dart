@@ -34,8 +34,29 @@ class InboxView extends StatelessWidget {
   }
 }
 
-class _InboxScaffold extends StatelessWidget {
+class _InboxScaffold extends StatefulWidget {
   const _InboxScaffold();
+
+  @override
+  State<_InboxScaffold> createState() => _InboxScaffoldState();
+}
+
+class _InboxScaffoldState extends State<_InboxScaffold> {
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onResume: () => context.read<InboxController>().load(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,8 +187,7 @@ class _Item extends StatelessWidget {
       FriendMissedNotice() => (Icons.campaign_rounded, const Color(0xFFF59E0B)),
       PlainNotice() => (Icons.notifications_rounded, t.muted),
     };
-    final answer = c.answerFor(n.id);
-    final busy = c.isBusy(n.id);
+    final busy = c.isBusy(n.friendRequest?.requestId ?? '');
 
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -211,35 +231,45 @@ class _Item extends StatelessWidget {
                 ],
                 if (kind is FriendRequestNotice) ...[
                   const SizedBox(height: 10),
-                  if (answer != null)
-                    Text(
-                      answer == RequestAnswer.accepted
-                          ? 'You’re now friends'
-                          : 'Declined',
-                      style: theme.textTheme.labelLarge,
-                    )
-                  else if (busy)
-                    const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  if (!kind.state.pending)
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        kind.state.status.label,
+                        style: theme.textTheme.labelLarge,
+                      ),
                     )
                   else
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        GlassButton(
-                          label: 'Accept',
-                          compact: true,
-                          onPressed: () =>
-                              c.answer(n, kind.fromUserId, accept: true),
+                        IntrinsicWidth(
+                          child: GlassButton(
+                            label: 'Accept',
+                            onPressed: busy
+                                ? null
+                                : () => c.answer(n, accept: true),
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        GlassButton(
-                          label: 'Decline',
-                          compact: true,
-                          secondary: true,
-                          onPressed: () =>
-                              c.answer(n, kind.fromUserId, accept: false),
+                        IntrinsicWidth(
+                          child: GlassButton(
+                            label: 'Decline',
+                            secondary: true,
+                            onPressed: busy
+                                ? null
+                                : () => c.answer(n, accept: false),
+                          ),
                         ),
+                        if (busy)
+                          const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              semanticsLabel: 'Responding to friend request',
+                            ),
+                          ),
                       ],
                     ),
                 ],
@@ -260,7 +290,7 @@ class _Item extends StatelessWidget {
       ),
     );
     return Semantics(
-      button: true,
+      button: kind is! FriendRequestNotice,
       child: Pressable(
         scale: 0.98,
         onTap: () {

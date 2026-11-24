@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:alcohol_neon/auth/auth_service.dart';
@@ -90,10 +91,18 @@ void main() {
       if (path.endsWith('/Friend/user-1/requests')) {
         return jsonResponse({
           'incoming': [
-            {'userId': 'u-priya', 'username': 'priya'},
+            {
+              'requestId': '11111111-1111-1111-1111-111111111111',
+              'userId': 'u-priya',
+              'username': 'priya',
+            },
           ],
           'outgoing': [
-            {'userId': 'u-jonas', 'username': 'jonas'},
+            {
+              'requestId': '22222222-2222-2222-2222-222222222222',
+              'userId': 'u-jonas',
+              'username': 'jonas',
+            },
           ],
         });
       }
@@ -137,6 +146,56 @@ void main() {
     });
 
     for (final platform in platforms) {
+      testWidgets(
+        '${platform.name}: old server Friends and incoming search are safely unavailable',
+        (tester) async {
+          final h = SessionHarness(
+            respond: (r) async {
+              if (r.url.path.endsWith('/Friend/user-1')) {
+                return jsonResponse([]);
+              }
+              if (r.url.path.endsWith('/requests')) {
+                return jsonResponse({
+                  'incoming': [
+                    {'userId': 'u-priya', 'username': 'priya'},
+                  ],
+                  'outgoing': [
+                    {'userId': 'u-jonas', 'username': 'jonas'},
+                  ],
+                });
+              }
+              if (r.url.path.endsWith('/search')) {
+                return jsonResponse([
+                  {
+                    'userId': 'u-priya',
+                    'username': 'priya',
+                    'relation': 'incoming',
+                  },
+                ]);
+              }
+              return null;
+            },
+          );
+          await h.start();
+          await pump(tester, h, const FriendsView(), platform: platform);
+          expect(find.text('Accept'), findsNothing);
+          expect(find.text('Decline'), findsNothing);
+          expect(find.text('Cancel'), findsNothing);
+          expect(find.text('Request unavailable'), findsWidgets);
+          await tester.enterText(find.byType(TextField), 'pr');
+          await tester.pump(const Duration(milliseconds: 500));
+          await tester.pumpAndSettle();
+          expect(find.text('Request unavailable'), findsOneWidget);
+          expect(find.text('Accept'), findsNothing);
+          expect(
+            h.requests.where(
+              (r) => r.method != 'GET' && r.url.path.contains('/Friend/'),
+            ),
+            isEmpty,
+          );
+        },
+      );
+
       final ios = platform == TargetPlatform.iOS;
       testWidgets('${platform.name}: removing a friend goes through the more '
           'button${ios ? '' : ' menu'} and asks first', (tester) async {
@@ -190,6 +249,193 @@ void main() {
 
   group('Inbox', () {
     final now = DateTime.now().toUtc();
+    for (final platform in platforms) {
+      testWidgets(
+        '${platform.name}: pending disables both controls; conflict renders Cancelled; resume updates another device decision',
+        (tester) async {
+          const id = '11111111-1111-1111-1111-111111111111';
+          var status = 'pending';
+          final response = Completer<http.Response>();
+          final h = SessionHarness(
+            respond: (r) async {
+              final state = {
+                'requestId': id,
+                'status': status,
+                'createdAtUtc': '2026-11-13T08:00:00Z',
+                'resolvedAtUtc': status == 'pending'
+                    ? null
+                    : '2026-11-13T09:00:00Z',
+              };
+              if (r.url.path.endsWith('/resolve')) return response.future;
+              if (r.url.path.endsWith('/requests/$id')) {
+                return jsonResponse(state);
+              }
+              if (r.url.path.endsWith('/Inbox/user-1')) {
+                return jsonResponse([
+                  {
+                    'id': 'n1',
+                    'kind': status == 'pending'
+                        ? 'friend_request'
+                        : 'friend_request_resolved',
+                    'title': 'priya wants to be friends',
+                    'body': 'Request from priya',
+                    'friendRequest': state,
+                  },
+                ]);
+              }
+              return null;
+            },
+          );
+          await h.start();
+          await pump(tester, h, const InboxView(), platform: platform);
+          await tester.tap(find.widgetWithText(GlassButton, 'Accept'));
+          await tester.pump();
+          for (final label in ['Accept', 'Decline']) {
+            expect(
+              tester
+                  .widget<GlassButton>(find.widgetWithText(GlassButton, label))
+                  .onPressed,
+              isNull,
+            );
+          }
+          expect(find.byType(CircularProgressIndicator), findsOneWidget);
+          status = 'cancelled';
+          response.complete(
+            jsonResponse({
+              'type': 'https://errors.test/api/v1/friend_request_resolved',
+              'status': 409,
+              'detail': 'This friend request has already been resolved.',
+            }, 409),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Cancelled'), findsOneWidget);
+          expect(find.text('Accept'), findsNothing);
+          expect(calls(h, 'POST', '/requests/$id/resolve'), hasLength(1));
+          // A new controller on a different device gets its state from GET, not a
+          // memory-only answer. Resume also re-reads server state without push.
+          await tester.pumpWidget(const SizedBox.shrink());
+          status = 'pending';
+          await tester.pumpWidget(
+            ChangeNotifierProvider<SessionController>.value(
+              value: h.session,
+              child: MaterialApp(
+                theme: AppTheme.light.copyWith(platform: platform),
+                home: const InboxView(),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          status = 'declined';
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.hidden,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.hidden,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Declined'), findsOneWidget);
+          expect(find.text('Decline'), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+
+      testWidgets(
+        '${platform.name}: ResolvedInbox_SurvivesNewControllerAndFreshFetch',
+        (tester) async {
+          final h = SessionHarness(
+            respond: (r) async {
+              if (r.url.path.endsWith('/Inbox/user-1')) {
+                return jsonResponse([
+                  for (final (id, status) in [
+                    ('old', 'declined'),
+                    ('new', 'accepted'),
+                  ])
+                    {
+                      'id': id,
+                      'kind': 'friend_request_resolved',
+                      'title': 'priya wants to be friends',
+                      'body': 'A separate request',
+                      'data': jsonEncode({'fromUserId': 'u-priya'}),
+                      'friendRequest': {
+                        'requestId': id == 'old'
+                            ? '11111111-1111-1111-1111-111111111111'
+                            : '22222222-2222-2222-2222-222222222222',
+                        'status': status,
+                        'resolvedAtUtc': '2026-11-13T08:00:00Z',
+                      },
+                    },
+                ]);
+              }
+              return null;
+            },
+          );
+          await h.start();
+          await pump(tester, h, const InboxView(), platform: platform);
+          expect(find.text('Accepted'), findsOneWidget);
+          expect(find.text('Declined'), findsOneWidget);
+          expect(find.text('Accept'), findsNothing);
+          expect(find.text('Decline'), findsNothing);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+          await tester.pumpWidget(
+            ChangeNotifierProvider<SessionController>.value(
+              value: h.session,
+              child: MaterialApp(
+                theme: AppTheme.light.copyWith(platform: platform),
+                home: const InboxView(),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Accepted'), findsOneWidget);
+          expect(find.text('Declined'), findsOneWidget);
+        },
+      );
+
+      testWidgets('${platform.name}: UnlinkedLegacy_NeverUsesPairFallback', (
+        tester,
+      ) async {
+        final h = SessionHarness(
+          respond: (r) async {
+            if (r.url.path.endsWith('/Inbox/user-1')) {
+              return jsonResponse([
+                {
+                  'id': 'legacy',
+                  'kind': 'friend_request',
+                  'title': 'priya wants to be friends',
+                  'data': jsonEncode({'fromUserId': 'u-priya'}),
+                },
+              ]);
+            }
+            return null;
+          },
+        );
+        await h.start();
+        await pump(tester, h, const InboxView(), platform: platform);
+        expect(find.text('Request unavailable'), findsOneWidget);
+        expect(find.text('Accept'), findsNothing);
+        expect(find.text('Decline'), findsNothing);
+        expect(
+          h.requests.where(
+            (r) => r.method != 'GET' && r.url.path.contains('/Friend/'),
+          ),
+          isEmpty,
+        );
+      });
+    }
+
     Future<http.Response?> inbox(http.Request r) async {
       final path = r.url.path;
       if (r.method == 'GET' && path.endsWith('/Inbox/user-1')) {
@@ -201,6 +447,11 @@ void main() {
             'body': '',
             'data': jsonEncode({'fromUserId': 'u-priya'}),
             'createdAtUtc': now.toIso8601String(),
+            'friendRequest': {
+              'requestId': '11111111-1111-1111-1111-111111111111',
+              'status': 'pending',
+              'resolvedAtUtc': null,
+            },
           },
           {
             'id': 'n2',
@@ -215,8 +466,13 @@ void main() {
         ]);
       }
       if (path.endsWith('/read-all')) return jsonResponse(1);
-      if (path.endsWith('/accept')) {
-        return jsonResponse({'userId': 'u-priya', 'username': 'priya'});
+      if (path.endsWith('/resolve')) {
+        return jsonResponse({
+          'requestId': '11111111-1111-1111-1111-111111111111',
+          'status': 'accepted',
+          'createdAtUtc': '2026-11-13T08:00:00Z',
+          'resolvedAtUtc': '2026-11-13T09:00:00Z',
+        });
       }
       if (r.method == 'POST') return http.Response('', 204);
       return null;
@@ -246,10 +502,14 @@ void main() {
       await tester.tap(find.widgetWithText(GlassButton, 'Accept'));
       await tester.pumpAndSettle();
       expect(
-        calls(h, 'POST', '/Friend/user-1/requests/u-priya/accept'),
+        calls(
+          h,
+          'POST',
+          '/Friend/user-1/requests/11111111-1111-1111-1111-111111111111/resolve',
+        ),
         hasLength(1),
       );
-      expect(find.text('You’re now friends'), findsOneWidget);
+      expect(find.text('Accepted'), findsOneWidget);
     });
   });
 

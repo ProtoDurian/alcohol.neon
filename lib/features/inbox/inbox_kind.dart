@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../data/friend_repository.dart';
 import '../../data/inbox_repository.dart';
 
 /// What a notification lets the user do, decoded from its `kind` and its
@@ -8,10 +9,10 @@ sealed class InboxKind {
   const InboxKind();
 }
 
-/// `friend_request` `{ fromUserId }`: Accept / Decline inline.
+/// Both request kinds use the server's linked occurrence, never sender data.
 class FriendRequestNotice extends InboxKind {
-  final String fromUserId;
-  const FriendRequestNotice(this.fromUserId);
+  final FriendRequestState state;
+  const FriendRequestNotice(this.state);
 }
 
 /// `friend_accepted` `{ friendUserId }`.
@@ -47,8 +48,10 @@ InboxKind inboxKindOf(InboxNotificationRes n) {
 
   switch (n.kind) {
     case 'friend_request':
-      final from = str('fromUserId') ?? n.actorUserId;
-      return from == null ? const PlainNotice() : FriendRequestNotice(from);
+    case 'friend_request_resolved':
+      return FriendRequestNotice(
+        n.friendRequest ?? FriendRequestState.unavailable,
+      );
     case 'friend_accepted':
       final friend = str('friendUserId') ?? n.actorUserId;
       return friend == null
