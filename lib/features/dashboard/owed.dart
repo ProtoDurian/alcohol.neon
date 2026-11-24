@@ -1,21 +1,21 @@
-import '../../generated/zinc/models/habit_overview_response.dart';
+import '../../generated/zinc/models/owed_res.dart';
 
 /// Where a penalty stands. zinc charges penalties on its own every 15
-/// minutes; one it couldn't charge (no card, or 5 failed tries) waits until
-/// the card is fixed.
+/// minutes; one it couldn't charge waits until the card is added or fixed.
 enum OwedState { charging, couldntCharge }
 
-/// One missed habit the user owes for.
+/// Why zinc couldn't charge: no card on file, or the card was declined.
+enum OwedReason { noCard, chargeFailed }
+
+/// One missed day the user owes for.
 class OwedItem {
   final String habitName;
-
-  /// The missed day; null while the data comes from the overview, which only
-  /// has a total per habit.
   final DateTime? date;
   final double amount;
   final String? currency;
   final String? charityName;
   final OwedState state;
+  final OwedReason? reason;
 
   const OwedItem({
     required this.habitName,
@@ -24,10 +24,11 @@ class OwedItem {
     this.date,
     this.currency,
     this.charityName,
+    this.reason,
   });
 }
 
-/// What the Owed screen lists, and why there is no card action yet.
+/// What the Owed screen lists.
 class Owed {
   final double total;
   final String? currency;
@@ -35,41 +36,37 @@ class Owed {
 
   const Owed(this.total, this.currency, this.items);
 
-  bool get any => total > 0;
-  bool get anyCouldntCharge =>
-      items.any((i) => i.state == OwedState.couldntCharge);
+  List<OwedItem> get couldntCharge => [
+    for (final i in items)
+      if (i.state == OwedState.couldntCharge) i,
+  ];
+
+  /// Some penalty is waiting for a card: Add a card wins over Fix card.
+  bool get needsCard => couldntCharge.any((i) => i.reason == OwedReason.noCard);
 }
 
 /// zinc's money strings ("12.50") as a number; 0 when unreadable.
 double parseMoney(String? value) => double.tryParse(value ?? '') ?? 0;
 
-/// The owed list from today's overview: one item per habit with debt.
-///
-/// SEAM: zinc is adding an owed-list route that returns each missed day with
-/// its date, amount, charity and charge state ("Charging" or "Couldn't
-/// charge"). Until it lands, the overview only has each habit's total, so
-/// there's no date, and the state is guessed from the card: without a card
-/// nothing can be charged. Replace this function's body with that route's
-/// mapping; the Owed screen only reads [Owed].
-Owed owedFromOverview(
-  HabitOverviewResponse? overview, {
-  required bool hasCard,
-}) {
-  final habits = overview?.habits ?? const [];
-  final items = [
-    for (final h in habits)
-      if (parseMoney(h.totalDebt) > 0)
-        OwedItem(
-          habitName: h.name ?? 'Habit',
-          amount: parseMoney(h.totalDebt),
-          currency: h.stake.currency,
-          charityName: h.charity?.name,
-          state: hasCard ? OwedState.charging : OwedState.couldntCharge,
-        ),
-  ];
-  final currency = items.isEmpty ? null : items.first.currency;
-  return Owed(parseMoney(overview?.totalDebt), currency, items);
-}
+/// zinc's owed list (`GET /Penalty/{userId}/owed`), oldest first.
+Owed owedFromRes(OwedRes res) => Owed(parseMoney(res.total), res.currency, [
+  for (final i in res.items ?? const [])
+    OwedItem(
+      habitName: i.habitName ?? 'Habit',
+      date: DateTime.tryParse(i.localDate ?? ''),
+      amount: parseMoney(i.amount),
+      currency: i.currency ?? res.currency,
+      charityName: i.charityName,
+      state: i.state == 'couldNotCharge'
+          ? OwedState.couldntCharge
+          : OwedState.charging,
+      reason: switch (i.reason) {
+        'noCard' => OwedReason.noCard,
+        'chargeFailed' => OwedReason.chargeFailed,
+        _ => null,
+      },
+    ),
+]);
 
 /// "$5" or "$5.50" (or "EUR 5" for other currencies).
 String formatMoney(double amount, String? currency, {bool cents = false}) {

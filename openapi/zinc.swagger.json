@@ -3409,6 +3409,55 @@
         }
       }
     },
+    "/api/v{version}/Penalty/{userId}/owed": {
+      "get": {
+        "tags": ["Penalty"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "The requested API version",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "default": "1.0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwedRes"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwedRes"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwedRes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v{version}/charities/sync/pledge": {
       "post": {
         "tags": ["PledgeSync"],
@@ -6811,6 +6860,71 @@
                 "$ref": "#/components/schemas/HabitExecutionRes"
               }
             ],
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OwedItemRes": {
+        "required": ["habitId"],
+        "type": "object",
+        "properties": {
+          "habitId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "habitName": {
+            "type": "string",
+            "nullable": true
+          },
+          "localDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "charityId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "charityName": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OwedRes": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "string",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwedItemRes"
+            },
             "nullable": true
           }
         },

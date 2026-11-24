@@ -377,10 +377,10 @@ class _TodayState extends State<_Today> {
     if (!isToday) widget.c.loadDay(day);
   }
 
-  Future<void> _openOwed(Owed owed) async {
+  Future<void> _openOwed() async {
     final changed = await Navigator.of(
       context,
-    ).push<bool>(MaterialPageRoute(builder: (_) => OwedView(owed: owed)));
+    ).push<bool>(MaterialPageRoute(builder: (_) => const OwedView()));
     if (changed == true && mounted) widget.c.load(quiet: true);
   }
 
@@ -388,13 +388,13 @@ class _TodayState extends State<_Today> {
   Widget build(BuildContext context) {
     final c = widget.c;
     final buffers = context.watch<BuffersController>();
-    final hasCard = context.select<SessionController, bool>(
-      (s) => s.hasPaymentConsent,
-    );
     final plan = c.plan;
     final now = DateTime.now();
     final nextUp = widget.layout == TodayLayout.nextUp;
-    final owed = owedFromOverview(c.overview, hasCard: hasCard);
+    // The header button uses the overview's total; the Owed screen loads
+    // zinc's owed list itself.
+    final owed = parseMoney(c.totalDebt);
+    final currency = c.habits.isEmpty ? null : c.habits.first.stake.currency;
     final day = _day;
     final executions = day == null ? null : c.executionsOn(day);
     final items = day == null
@@ -472,10 +472,8 @@ class _TodayState extends State<_Today> {
             top: MediaQuery.paddingOf(context).top,
             caption: _dateCaption(day ?? now),
             title: day == null ? 'Today' : _shortDay(day),
-            owedLabel: owed.any
-                ? '${formatMoney(owed.total, owed.currency)} owed'
-                : null,
-            onOwed: () => _openOwed(owed),
+            owedLabel: owed > 0 ? '${formatMoney(owed, currency)} owed' : null,
+            onOwed: _openOwed,
             onProfile: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const ProfileView())),
@@ -518,18 +516,32 @@ class _TodayState extends State<_Today> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (day == null && !c.stale)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 16, 12),
-                  child: _AddButton(onTap: () => _openEditor(context, c)),
-                ),
-              if (c.habits.isNotEmpty)
-                _DateStrip(today: c.today, selected: day, onPick: _pickDay),
-            ],
+          // The date strip and "+" share the bottom bar, so "+" never
+          // covers a row's check button.
+          child: SafeArea(
+            top: false,
+            minimum: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  if (c.habits.isNotEmpty)
+                    Expanded(
+                      child: _DateStrip(
+                        today: c.today,
+                        selected: day,
+                        onPick: _pickDay,
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  if (day == null && !c.stale) ...[
+                    const SizedBox(width: 8),
+                    _AddButton(onTap: () => _openEditor(context, c)),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -1691,32 +1703,25 @@ class _DateStrip extends StatelessWidget {
     final t = GlassTokens.of(context);
     final fg = theme.colorScheme.onSurface;
     final bg = theme.colorScheme.surface;
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Glass(
-          blur: true,
-          strong: true,
-          radius: const BorderRadius.all(Radius.circular(26)),
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: [
-              for (var back = 6; back >= 0; back--)
-                Expanded(
-                  child: _day(
-                    context,
-                    DateTime(today.year, today.month, today.day - back),
-                    isToday: back == 0,
-                    fg: fg,
-                    bg: bg,
-                    t: t,
-                  ),
-                ),
-            ],
-          ),
-        ),
+    return Glass(
+      blur: true,
+      strong: true,
+      radius: const BorderRadius.all(Radius.circular(28)),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          for (var back = 6; back >= 0; back--)
+            Expanded(
+              child: _day(
+                context,
+                DateTime(today.year, today.month, today.day - back),
+                isToday: back == 0,
+                fg: fg,
+                bg: bg,
+                t: t,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -1745,26 +1750,31 @@ class _DateStrip extends StatelessWidget {
             shape: const StadiumBorder(),
             color: on ? fg : Colors.transparent,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                isToday
-                    ? 'Today'
-                    : _weekdayNames[day.weekday - 1].substring(0, 3),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontSize: 10,
-                  color: on ? bg.withValues(alpha: 0.7) : t.muted,
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          // One line each, shrunk to fit narrow cells or large text.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  isToday
+                      ? 'Today'
+                      : _weekdayNames[day.weekday - 1].substring(0, 3),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 10,
+                    color: on ? bg.withValues(alpha: 0.7) : t.muted,
+                  ),
                 ),
-              ),
-              Text(
-                '${day.day}',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: on ? bg : fg,
+                Text(
+                  '${day.day}',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: on ? bg : fg,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

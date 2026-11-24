@@ -51,6 +51,8 @@ export 'models/link_nfc_tag_req.dart';
 export 'models/mark_daily_failures_cron_res.dart';
 export 'models/nfc_tag_res.dart';
 export 'models/nfc_tag_resolution_res.dart';
+export 'models/owed_item_res.dart';
+export 'models/owed_res.dart';
 export 'models/payment_consent_res.dart';
 export 'models/plan_res.dart';
 export 'models/pledge_sync_summary_res.dart';
