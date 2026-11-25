@@ -1780,7 +1780,10 @@ class _CheckButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = GlassTokens.of(context);
+    // Its own node, so screen readers (and Android's Robo) reach the check
+    // apart from the card, whose tap opens the habit.
     return Semantics(
+      container: true,
       button: true,
       label: nfc ? 'Scan the tag for $name' : 'Complete $name',
       excludeSemantics: true,
