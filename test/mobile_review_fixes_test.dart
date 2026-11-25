@@ -626,6 +626,101 @@ void main() {
     );
   }
 
+  testWidgets('a check-in tapped in the app can be undone from the Undo bar', (
+    tester,
+  ) async {
+    var done = false;
+    final h = SessionHarness(
+      respond: (r) async {
+        final path = r.url.path;
+        if (path.endsWith('/overview')) {
+          final body = overviewBody(done ? 'succeeded' : 'not_applicable');
+          final habit = (body['habits'] as List).single as Map;
+          habit['canUndo'] = done;
+          return jsonResponse(body);
+        }
+        if (path.endsWith('/v1/executions') && r.method == 'POST') {
+          done = true;
+          return null; // the harness acknowledges the check-in
+        }
+        if (path.endsWith('/v1/executions') && r.method == 'DELETE') {
+          done = false;
+          return jsonResponse({
+            'habitId': 'h1',
+            'date': '2026-11-09',
+            'status': 'pending',
+          });
+        }
+        return null;
+      },
+    );
+    await h.start();
+    await pumpScreen(tester, h, const DashboardView());
+    await tester.tap(find.text('Complete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Read a chapter done'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(
+      h.requests.where(
+        (r) =>
+            r.method == 'DELETE' &&
+            r.url.path.endsWith('/Habit/user-1/v1/executions'),
+      ),
+      hasLength(1),
+    );
+    // Open again, so it can be completed again.
+    expect(find.text('Complete'), findsOneWidget);
+    expect(find.text('Undo'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    h.dispose();
+  });
+
+  testWidgets('an undo zinc refuses refreshes Today and says why', (
+    tester,
+  ) async {
+    var refused = false;
+    var reloads = 0;
+    final h = SessionHarness(
+      respond: (r) async {
+        if (r.url.path.endsWith('/overview')) {
+          if (refused) reloads++;
+          final body = overviewBody('succeeded');
+          final habit = (body['habits'] as List).single as Map;
+          // Settled since the first load: zinc no longer offers undo.
+          habit['canUndo'] = !refused;
+          return jsonResponse(body);
+        }
+        if (r.method == 'DELETE') {
+          refused = true;
+          return jsonResponse({
+            'type': 'https://zinc.test/errors/habit_day_locked',
+            'title': 'Habit day locked',
+            'status': 409,
+            'localDate': '2026-11-09',
+          }, 409);
+        }
+        return null;
+      },
+    );
+    await h.start();
+    await pumpScreen(tester, h, const DashboardView());
+    await tester.tap(find.bySemanticsLabel('Done. Undo Read a chapter'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark “Read a chapter” as not done?'), findsOneWidget);
+    await tester.tap(find.text('Mark as not done'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('This day has settled, so it can no longer be changed.'),
+      findsOneWidget,
+    );
+    expect(reloads, 1);
+    // Still done, and the check no longer offers undo.
+    expect(find.bySemanticsLabel('Done'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    h.dispose();
+  });
+
   testWidgets('failed completion stays actionable and shows action error', (
     tester,
   ) async {

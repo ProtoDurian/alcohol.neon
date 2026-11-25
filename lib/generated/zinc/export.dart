@@ -37,6 +37,7 @@ export 'models/friend_res.dart';
 export 'models/friend_stake_res.dart';
 export 'models/friend_watcher_res.dart';
 export 'models/habit_charity_ref_res.dart';
+export 'models/habit_check_res.dart';
 export 'models/habit_execution_res.dart';
 export 'models/habit_overview_habit_res.dart';
 export 'models/habit_overview_response.dart';

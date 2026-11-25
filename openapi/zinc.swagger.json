@@ -2403,6 +2403,71 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": ["Habit"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "habitVersionId",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "The requested API version",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "string",
+              "default": "1.0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitCheckRes"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitCheckRes"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitCheckRes"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v{version}/Habit/{userId}/{habitVersionId}/executions/skip": {
@@ -6431,6 +6496,24 @@
         },
         "additionalProperties": false
       },
+      "HabitCheckRes": {
+        "type": "object",
+        "properties": {
+          "habitId": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "HabitExecutionRes": {
         "required": ["habitVersionId", "id", "paymentProcessed"],
         "type": "object",
@@ -6544,6 +6627,9 @@
           "habitTime": {
             "type": "string",
             "nullable": true
+          },
+          "canUndo": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

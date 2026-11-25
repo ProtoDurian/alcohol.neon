@@ -242,20 +242,12 @@ class DashboardController extends ChangeNotifier {
   /// strip). 0 until the overview loads.
   int get totalSkip => _overview?.totalSkip ?? 0;
 
-  // Habits the user checked in by tapping in the app since the last load.
-  // SEAM: zinc's overview will say this (a field like `canUndo`, which also
-  // covers check-ins from an earlier launch); until then Today only knows
-  // the ones made here.
-  final Set<String> _tapped = {};
-
-  /// Whether today's completion can be taken back: a manual check-in the
-  /// user made by tapping, in a build with zinc's undo route, before the day
-  /// settles (the overview stops listing it as today's then).
+  /// Whether today's completion can be taken back. zinc's overview says so
+  /// (`canUndo`): only a check-in tapped in the app, on a habit without an NFC
+  /// tag, before the day settles. An older zinc sends nothing: no undo.
   bool canUndo(HabitOverviewHabitRes habit) {
-    if (!ExecutionRepository.undoAvailable || stale) return false;
-    if (habit.proof == 'strava' || habit.proof == 'nfc') return false;
-    if (todayStatus(habit) != 'succeeded') return false;
-    return _tapped.contains(habit.id);
+    if (stale || habit.canUndo != true) return false;
+    return todayStatus(habit) == 'succeeded';
   }
 
   /// The habit to offer Undo for right after the user completed it; cleared
@@ -286,8 +278,18 @@ class DashboardController extends ChangeNotifier {
     _busy.remove(habitId);
     switch (res) {
       case Ok():
-        _tapped.remove(habitId);
         _settled[habitId] = (habit.status.today, 'not_applicable');
+        notifyListeners();
+        await load(quiet: true);
+      // The day can't be taken back after all (zinc's view changed since the
+      // overview loaded): say why and show what zinc has now.
+      case Err(:final problem) when problem.status == 409:
+        _actionError = Problem.local(
+          problem.type.contains('habit_day_locked')
+              ? 'This day has settled, so it can no longer be changed.'
+              : 'This check-in can’t be undone.',
+          status: 409,
+        );
         notifyListeners();
         await load(quiet: true);
       case Err(:final problem):
@@ -409,13 +411,16 @@ class DashboardController extends ChangeNotifier {
     switch (res) {
       case Ok():
         _settled[habitId] = (habit.status.today, skip ? 'skip' : 'succeeded');
-        if (!skip) {
-          _tapped.add(habitId);
-          if (canUndo(habit)) undoOffer = habitId;
-        }
         _busy.remove(habitId);
         notifyListeners();
         await load(quiet: true); // reconcile streaks / debt / skip budget
+        // Offer Undo when the reloaded overview says this check-in can be
+        // taken back.
+        if (!skip &&
+            _current &&
+            habits.any((h) => h.id == habitId && canUndo(h))) {
+          undoOffer = habitId;
+        }
         // A successful reload re-plans reminders itself; if it failed, re-plan
         // from the acknowledged action so today's reminder still goes away.
         if (_current && _refreshError != null) unawaited(_syncReminders());

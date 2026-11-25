@@ -32,6 +32,7 @@ class HabitOverviewHabitRes {
     this.routineId,
     this.sortOrder,
     this.habitTime,
+    this.canUndo,
   });
   
   factory HabitOverviewHabitRes.fromJson(Map<String, Object?> json) => _$HabitOverviewHabitResFromJson(json);
@@ -54,6 +55,7 @@ class HabitOverviewHabitRes {
   final String? routineId;
   final int? sortOrder;
   final String? habitTime;
+  final bool? canUndo;
 
   Map<String, Object?> toJson() => _$HabitOverviewHabitResToJson(this);
 }
