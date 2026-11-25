@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart' show CupertinoSliverRefreshControl;
@@ -15,6 +16,7 @@ import '../../generated/zinc/models/habit_overview_habit_res.dart';
 import '../../session/session_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/glass.dart';
+import '../../theme/habit_colors.dart';
 import '../../widgets/glass_list.dart';
 import '../../widgets/glass_modal.dart';
 import '../../widgets/app_loader.dart';
@@ -368,7 +370,20 @@ class _TodayState extends State<_Today> {
   @override
   void dispose() {
     _tick.cancel();
+    _offerTimer?.cancel();
     super.dispose();
+  }
+
+  // Hides the Undo bar 5 seconds after the controller offers it.
+  String? _offerSeen;
+  Timer? _offerTimer;
+
+  void _watchOffer(String? id) {
+    if (id == _offerSeen) return;
+    _offerSeen = id;
+    _offerTimer?.cancel();
+    if (id == null) return;
+    _offerTimer = Timer(const Duration(seconds: 5), widget.c.clearUndoOffer);
   }
 
   void _pickDay(DateTime day, {required bool isToday}) {
@@ -450,7 +465,11 @@ class _TodayState extends State<_Today> {
           _nextUpCard(context, c, plan, now)
         else
           _ProgressCard(plan: plan, now: now),
-        _Tabs(items: items, tab: _tab, onTab: (t) => setState(() => _tab = t)),
+        _TimePicker(
+          items: items,
+          tab: _tab,
+          onTab: (t) => setState(() => _tab = t),
+        ),
         if (day != null && executions == null)
           const SizedBox.shrink()
         else if (shown.isEmpty)
@@ -509,9 +528,40 @@ class _TodayState extends State<_Today> {
       ],
     );
 
+    final offerId = day == null ? c.undoOffer : null;
+    _watchOffer(c.undoOffer);
+    final offer = offerId == null
+        ? null
+        : c.habits.where((h) => h.id == offerId).firstOrNull;
     return Stack(
       children: [
         Positioned.fill(child: scroll),
+        // For 5 seconds after a manual check-in, above the bottom bar.
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 84 + MediaQuery.paddingOf(context).bottom,
+          child: AnimatedSwitcher(
+            duration: GlassMotion.of(context, GlassMotion.fast),
+            transitionBuilder: (child, a) => FadeTransition(
+              opacity: a,
+              child: SlideTransition(
+                position: Tween(
+                  begin: const Offset(0, 0.3),
+                  end: Offset.zero,
+                ).animate(a),
+                child: child,
+              ),
+            ),
+            child: offer == null
+                ? const SizedBox.shrink()
+                : _UndoBar(
+                    key: ValueKey(offer.id ?? offer.name),
+                    name: offer.name ?? 'Habit',
+                    onUndo: () => c.undo(offer),
+                  ),
+          ),
+        ),
         Positioned(
           left: 0,
           right: 0,
@@ -764,62 +814,82 @@ class _NextUpCard extends StatelessWidget {
     final busy = c.isBusy(h);
     final stake = stakeLine(h);
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: _gap),
       child: Pressable(
         onTap: () => _openHabit(context, c, item),
         scale: 0.985,
-        child: Glass(
-          radius: const BorderRadius.all(Radius.circular(28)),
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+        child: _Card(
+          tint: habitColor(h.id),
+          glow: true,
+          padding: const EdgeInsets.all(_pad),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                children: [
-                  Text(
-                    'Next up',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: t.accent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _timeLeft(item.deadline, now),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: t.muted,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Lines up with the icons of the rows below.
+                  _HabitIcon(habit: h),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      h.name ?? 'Habit',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Next up',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: t.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              _timeLeft(item.deadline, now),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: t.muted,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                h.name ?? 'Habit',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                            if (h.status.currentStreak > 0)
+                              _Streak(h.status.currentStreak),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        _meta(context, h),
+                        if (stake != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            stake,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: t.muted,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  if (h.status.currentStreak > 0)
-                    _Streak(h.status.currentStreak),
                 ],
               ),
-              const SizedBox(height: 6),
-              _meta(context, h, style: theme.textTheme.bodyMedium),
-              if (stake != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  stake,
-                  style: theme.textTheme.bodySmall?.copyWith(color: t.muted),
-                ),
-              ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -858,10 +928,9 @@ class _AllClear extends StatelessWidget {
     final t = GlassTokens.of(context);
     final none = plan.scheduled == 0;
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Glass(
-        radius: const BorderRadius.all(Radius.circular(28)),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      padding: const EdgeInsets.only(top: _gap),
+      child: _Card(
+        padding: const EdgeInsets.symmetric(horizontal: _pad, vertical: 28),
         child: Column(
           children: [
             Icon(
@@ -907,10 +976,9 @@ class _ProgressCard extends StatelessWidget {
         ? null
         : sortTimeLabel(next.habit) ?? _timeLeft(next.deadline, now);
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Glass(
-        radius: const BorderRadius.all(Radius.circular(28)),
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.only(top: _gap),
+      child: _Card(
+        padding: const EdgeInsets.all(_pad),
         child: Row(
           children: [
             ProgressRing(
@@ -1010,90 +1078,225 @@ class _PastNote extends StatelessWidget {
   }
 }
 
-/// All, Morning, Afternoon, Evening and Anytime, each with its count.
-class _Tabs extends StatelessWidget {
-  final List<TodayItem> items;
-  final TodayTab tab;
-  final ValueChanged<TodayTab> onTab;
-  const _Tabs({required this.items, required this.tab, required this.onTab});
+/// Today's shared column: Next up, the picker and every row use the same
+/// width, corners, inside padding and gap.
+const _radius = BorderRadius.all(Radius.circular(20));
+const _pad = 14.0;
+const _gap = 10.0;
+
+/// A floating glass card with a soft shadow. [tint] washes the card in a
+/// habit's color (left to right, or corner to corner when [glow]), and
+/// [glow] also colors the shadow.
+class _Card extends StatelessWidget {
+  final Widget child;
+  final Color? tint;
+  final bool glow;
+  final EdgeInsetsGeometry padding;
+  const _Card({
+    required this.child,
+    this.tint,
+    this.glow = false,
+    this.padding = EdgeInsets.zero,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final t = GlassTokens.of(context);
-    final fg = theme.colorScheme.onSurface;
-    final bg = theme.colorScheme.surface;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final tint = this.tint;
+    final shadow = glow && tint != null
+        ? BoxShadow(
+            color: tint.withValues(alpha: dark ? 0.55 : 0.35),
+            blurRadius: 30,
+            offset: const Offset(0, 18),
+            spreadRadius: -16,
+          )
+        : BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.45 : 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+            spreadRadius: dark ? -10 : -6,
+          );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: t.fill,
+        borderRadius: _radius,
+        border: Border.all(color: t.edge, width: 0.5),
+        boxShadow: [shadow],
+      ),
+      child: ClipRRect(
+        borderRadius: _radius,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: tint == null
+                ? null
+                : LinearGradient(
+                    begin: glow ? Alignment.topLeft : Alignment.centerLeft,
+                    end: glow ? Alignment.bottomRight : Alignment.centerRight,
+                    stops: const [0, 0.72],
+                    colors: [
+                      tint.withValues(
+                        alpha: glow
+                            ? (dark ? 0.35 : 0.22)
+                            : (dark ? 0.24 : 0.14),
+                      ),
+                      tint.withValues(alpha: 0),
+                    ],
+                  ),
+          ),
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// The 36 px disc at a card's left edge: the habit's icon in its color, or a
+/// check on the accent once done.
+class _HabitIcon extends StatelessWidget {
+  final HabitOverviewHabitRes habit;
+  final IconData? icon;
+  final bool done;
+  const _HabitIcon({required this.habit, this.icon, this.done = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = GlassTokens.of(context);
+    final color = habitColor(habit.id);
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: done ? t.accent : color.withValues(alpha: 0.22),
+      ),
+      child: Icon(
+        done ? Icons.check_rounded : (icon ?? _proofIcon(habit)),
+        size: 18,
+        color: done ? t.onAccent : color,
+      ),
+    );
+  }
+}
+
+IconData _tabIcon(TodayTab tab) => switch (tab) {
+  TodayTab.all => Icons.grid_view_rounded,
+  TodayTab.morning => Icons.wb_twilight_rounded,
+  TodayTab.afternoon => Icons.wb_sunny_outlined,
+  TodayTab.evening => Icons.nightlight_outlined,
+  TodayTab.anytime => Icons.all_inclusive_rounded,
+};
+
+/// All, Morning, Afternoon, Evening and Anytime as one segmented glass bar:
+/// 5 equal parts, each an icon and a small label, with a raised thumb that
+/// slides to the selection.
+class _TimePicker extends StatelessWidget {
+  final List<TodayItem> items;
+  final TodayTab tab;
+  final ValueChanged<TodayTab> onTab;
+  const _TimePicker({
+    required this.items,
+    required this.tab,
+    required this.onTab,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = GlassTokens.of(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final index = TodayTab.values.indexOf(tab);
     return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        child: Row(
-          children: [
-            for (final k in TodayTab.values)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: _tab(context, k, fg, bg, t),
+      padding: const EdgeInsets.only(top: _gap),
+      child: _Card(
+        padding: const EdgeInsets.all(4),
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final w = box.maxWidth / TodayTab.values.length;
+            return SizedBox(
+              height: 48,
+              child: Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: GlassMotion.of(context, GlassMotion.fast),
+                    curve: GlassMotion.curve,
+                    left: index * w,
+                    top: 0,
+                    bottom: 0,
+                    width: w,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: dark
+                            ? Colors.white.withValues(alpha: 0.16)
+                            : Colors.white.withValues(alpha: 0.95),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(16),
+                        ),
+                        border: dark
+                            ? null
+                            : Border.all(color: t.edge, width: 0.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: dark ? 0.25 : 0.08,
+                            ),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      for (final k in TodayTab.values)
+                        Expanded(child: _segment(context, k)),
+                    ],
+                  ),
+                ],
               ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _tab(
-    BuildContext context,
-    TodayTab k,
-    Color fg,
-    Color bg,
-    GlassTokens t,
-  ) {
+  Widget _segment(BuildContext context, TodayTab k) {
+    final theme = Theme.of(context);
+    final t = GlassTokens.of(context);
     final on = k == tab;
+    final color = on ? theme.colorScheme.onSurface : t.muted;
     final count = items.where((i) => k.includes(i.habit)).length;
-    final style = Theme.of(context).textTheme.labelLarge;
     return Semantics(
       button: true,
       selected: on,
-      label: '${k.label}, $count',
+      label: '${k.label}, $count ${count == 1 ? 'habit' : 'habits'}',
       excludeSemantics: true,
-      child: Pressable(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
+          if (on) return;
           HapticFeedback.selectionClick();
           onTab(k);
         },
-        child: AnimatedContainer(
-          duration: GlassMotion.of(context, GlassMotion.fast),
-          height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          alignment: Alignment.center,
-          decoration: ShapeDecoration(
-            shape: StadiumBorder(
-              side: on
-                  ? BorderSide.none
-                  : BorderSide(color: t.edge, width: 0.5),
-            ),
-            color: on ? fg : t.strongFill,
-          ),
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: k.label,
-                  style: style?.copyWith(
-                    color: on ? bg : fg,
-                    fontWeight: FontWeight.w600,
-                  ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(_tabIcon(k), size: 18, color: color),
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                k.label,
+                maxLines: 1,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: color,
                 ),
-                TextSpan(
-                  text: '  $count',
-                  style: style?.copyWith(
-                    color: on ? bg.withValues(alpha: 0.6) : t.muted,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -1106,10 +1309,9 @@ class _EmptyTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Glass(
-        radius: const BorderRadius.all(Radius.circular(22)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      padding: const EdgeInsets.only(top: _gap),
+      child: _Card(
+        padding: const EdgeInsets.symmetric(horizontal: _pad, vertical: 18),
         child: SizedBox(
           width: double.infinity,
           child: Text(
@@ -1124,9 +1326,9 @@ class _EmptyTab extends StatelessWidget {
   }
 }
 
-/// The day's habits in one glass group, as a sliver of Today's scroll view.
-/// Long-press a row and drag it to reorder habits planned for the same time
-/// (when zinc keeps an order); a drop saves the new order.
+/// The day's habits, each its own floating card, as a sliver of Today's
+/// scroll view. Long-press a card and drag it to reorder habits planned for
+/// the same time (when zinc keeps an order); a drop saves the new order.
 class _Section extends StatefulWidget {
   final List<TodayItem> items;
   final DashboardController c;
@@ -1146,8 +1348,6 @@ class _Section extends StatefulWidget {
 }
 
 class _SectionState extends State<_Section> {
-  static const _radius = BorderRadius.all(Radius.circular(22));
-
   // The rows as they were when a drag started: a load landing mid-drag must
   // not move rows under the finger (or end the drag). It applies on drop.
   List<TodayItem>? _frozen;
@@ -1195,7 +1395,6 @@ class _SectionState extends State<_Section> {
   void _onStart(int index) {
     HapticFeedback.mediumImpact();
     _dragIndex = _slot = index;
-    // Rebuilt so the row under a lifted first row drops its divider.
     setState(() => _frozen = widget.items);
     _centers = [
       for (final i in _items)
@@ -1223,10 +1422,6 @@ class _SectionState extends State<_Section> {
   Widget _row(int index, {bool lifted = false}) {
     final item = _items[index];
     final id = _id(item);
-    final first = index == 0, last = index == _items.length - 1;
-    // While the first row is lifted, the next one leads the group.
-    final divider =
-        !first && !(_frozen != null && _dragIndex == 0 && index == 1);
     Widget row = _HabitRow(
       item: item,
       c: widget.c,
@@ -1257,64 +1452,34 @@ class _SectionState extends State<_Section> {
       onPointerCancel: (_) {
         if (_frozen != null) setState(() => _frozen = null);
       },
-      child: ReorderableDelayedDragStartListener(
-        index: index,
-        enabled: movable,
-        child: ClipRRect(
-          borderRadius: BorderRadius.vertical(
-            top: first ? _radius.topLeft : Radius.zero,
-            bottom: last ? _radius.bottomLeft : Radius.zero,
-          ),
-          child: Column(
+      child: Padding(
+        padding: const EdgeInsets.only(top: _gap),
+        child: ReorderableDelayedDragStartListener(
+          index: index,
+          enabled: movable,
+          child: KeyedSubtree(
             key: _rowKeys.putIfAbsent(id, GlobalKey.new),
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (divider)
-                Padding(
-                  padding: const EdgeInsets.only(left: 62),
-                  child: Divider(
-                    height: 0.5,
-                    color: GlassTokens.of(context).separator,
-                  ),
-                ),
-              row,
-            ],
+            child: row,
           ),
         ),
       ),
     );
   }
 
-  /// The lifted row: its own glass raised off the group, with a soft shadow
-  /// and a slight scale-up (none under Reduce Motion), and no dividers.
+  /// The lifted card: raised a little more, with a slight scale-up (none
+  /// under Reduce Motion).
   Widget _lifted(Widget _, int index, Animation<double> a) {
     final still = MediaQuery.of(context).disableAnimations;
     return AnimatedBuilder(
       animation: a,
       builder: (context, child) {
         final t = Curves.easeOut.transform(a.value);
-        return Transform.scale(
-          scale: still ? 1 : 1 + 0.03 * t,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: _radius,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18 * t),
-                  blurRadius: 24 * t,
-                  offset: Offset(0, 8 * t),
-                ),
-              ],
-            ),
-            child: child,
-          ),
-        );
+        return Transform.scale(scale: still ? 1 : 1 + 0.03 * t, child: child);
       },
       child: Material(
         type: MaterialType.transparency,
-        child: Glass(
-          blur: true,
-          strong: true,
+        child: Padding(
+          padding: const EdgeInsets.only(top: _gap),
           child: _row(index, lifted: true),
         ),
       ),
@@ -1323,36 +1488,40 @@ class _SectionState extends State<_Section> {
 
   @override
   Widget build(BuildContext context) {
-    final t = GlassTokens.of(context);
     final items = _items;
     _rowKeys.removeWhere((id, _) => !items.any((i) => _id(i) == id));
-    return SliverMainAxisGroup(
-      slivers: [
-        const SliverToBoxAdapter(child: SizedBox(height: 10)),
-        DecoratedSliver(
-          decoration: BoxDecoration(
-            color: t.fill,
-            borderRadius: _radius,
-            border: Border.all(color: t.edge, width: 0.5),
-          ),
-          sliver: SliverReorderableList(
-            itemCount: items.length,
-            itemBuilder: (_, i) => _row(i),
-            proxyDecorator: _lifted,
-            onReorderStart: _onStart,
-            onReorderEnd: (_) => HapticFeedback.lightImpact(),
-            onReorderItem: _move,
-          ),
-        ),
-      ],
+    return SliverReorderableList(
+      itemCount: items.length,
+      itemBuilder: (_, i) => _row(i),
+      proxyDecorator: _lifted,
+      onReorderStart: _onStart,
+      onReorderEnd: (_) => HapticFeedback.lightImpact(),
+      onReorderItem: _move,
     );
   }
 }
 
-/// One habit: its icon, name and time · proof · stake, then the round check
-/// button while it's open, or a chip with how the day went. Swipe an open
-/// habit left to skip it.
-class _HabitRow extends StatelessWidget {
+/// Asks before taking back a manual check-in, then takes it back.
+Future<void> _askUndo(
+  BuildContext context,
+  DashboardController c,
+  HabitOverviewHabitRes h,
+) async {
+  final ok = await showGlassConfirm(
+    context,
+    title: 'Mark “${h.name ?? 'this habit'}” as not done?',
+    message: 'You can do this until the day settles at 00:30.',
+    confirmLabel: 'Mark as not done',
+    cancelLabel: 'Keep it done',
+  );
+  if (ok) await c.undo(h);
+}
+
+/// One habit as a floating card tinted in its color: its icon, name and
+/// time · proof · stake, then the round check button while it's open, a
+/// green check once done, or a chip with how the day went. Swipe an open
+/// habit left to skip it. Completing it plays a short celebration.
+class _HabitRow extends StatefulWidget {
   final TodayItem item;
   final DashboardController c;
   final DateTime now;
@@ -1365,23 +1534,56 @@ class _HabitRow extends StatelessWidget {
   });
 
   @override
+  State<_HabitRow> createState() => _HabitRowState();
+}
+
+class _HabitRowState extends State<_HabitRow>
+    with SingleTickerProviderStateMixin {
+  // At 1 when idle; runs 0 → 1 once when the habit turns done here.
+  late final AnimationController _burst = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+    value: 1,
+  );
+
+  @override
+  void didUpdateWidget(_HabitRow old) {
+    super.didUpdateWidget(old);
+    final same = old.item.habit.id == widget.item.habit.id;
+    if (same &&
+        !widget.readOnly &&
+        old.item.open &&
+        widget.item.state == TodayState.done &&
+        !MediaQuery.of(context).disableAnimations) {
+      _burst.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _burst.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final t = GlassTokens.of(context);
+    final item = widget.item, c = widget.c, readOnly = widget.readOnly;
     final h = item.habit;
+    final color = habitColor(h.id);
     final open = item.open && !readOnly;
+    final done = item.state == TodayState.done;
     final busy = c.isBusy(h);
-    final (IconData icon, Color? fill) = switch (item.state) {
-      TodayState.done => (Icons.check_rounded, t.accent),
-      TodayState.settled => (Icons.close_rounded, null),
-      TodayState.skipped => (Icons.fast_forward_rounded, null),
-      TodayState.frozen => (Icons.ac_unit_rounded, null),
-      TodayState.vacation => (Icons.beach_access_rounded, null),
-      TodayState.paused => (Icons.pause_rounded, null),
-      _ => (_proofIcon(h), null),
+    final IconData? icon = switch (item.state) {
+      TodayState.settled => Icons.close_rounded,
+      TodayState.skipped => Icons.fast_forward_rounded,
+      TodayState.frozen => Icons.ac_unit_rounded,
+      TodayState.vacation => Icons.beach_access_rounded,
+      TodayState.paused => Icons.pause_rounded,
+      _ => null,
     };
     final (String? chip, Color? chipColor) = switch (item.state) {
-      TodayState.done => ('Done', t.accent),
       TodayState.settled => ('Missed', AppColors.fail),
       TodayState.skipped => ('Skipped', null),
       TodayState.frozen => ('Frozen', null),
@@ -1391,89 +1593,175 @@ class _HabitRow extends StatelessWidget {
       TodayState.unknown => (readOnly ? 'No result' : 'Unavailable', null),
       _ => (null, null),
     };
+    final undo = !readOnly && done && c.canUndo(h);
 
-    final row = Pressable(
-      onTap: readOnly ? null : () => _openHabit(context, c, item),
-      scale: 0.99,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 11, 12, 11),
-        child: Row(
+    final content = AnimatedBuilder(
+      animation: _burst,
+      builder: (context, _) {
+        final v = _burst.value;
+        return Stack(
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: fill ?? t.track,
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _pad,
+                vertical: 12,
               ),
-              child: Icon(
-                icon,
-                size: 18,
-                color: fill == null ? t.muted : t.onAccent,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    h.name ?? 'Habit',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: item.open ? null : t.muted,
+                  _HabitIcon(habit: h, icon: icon, done: done),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          h.name ?? 'Habit',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: item.open ? null : t.muted,
+                            decoration: done
+                                ? TextDecoration.lineThrough
+                                : null,
+                            decorationColor: t.muted.withValues(
+                              alpha: t.muted.a * v,
+                            ),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        _meta(context, h),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
-                  _meta(context, h),
+                  const SizedBox(width: 8),
+                  if (open)
+                    _CheckButton(
+                      name: h.name ?? 'habit',
+                      nfc: h.proof == 'nfc',
+                      busy: busy,
+                      onTap: busy ? null : () => _check(context, c, h),
+                    )
+                  else if (done)
+                    _DoneCheck(
+                      name: h.name ?? 'habit',
+                      scale: _pop(v),
+                      busy: busy,
+                      onTap: undo && !busy
+                          ? () => _askUndo(context, c, h)
+                          : null,
+                    )
+                  else if (chip != null)
+                    _Chip(label: chip, color: chipColor),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            if (open)
-              _CheckButton(
-                name: h.name ?? 'habit',
-                nfc: h.proof == 'nfc',
-                busy: busy,
-                onTap: busy ? null : () => _check(context, c, h),
-              )
-            else if (chip != null)
-              _Chip(label: chip, color: chipColor),
+            if (v < 1)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: color.withValues(alpha: 0.28 * (1 - v)),
+                  ),
+                ),
+              ),
           ],
-        ),
-      ),
-    );
-    if (!open || h.id == null) return row;
-    final canSkip = c.skipsLeft > 0 && !busy;
-    return Dismissible(
-      key: ValueKey('skip-${h.id}'),
-      direction: canSkip ? DismissDirection.endToStart : DismissDirection.none,
-      // The row stays; the reload marks it skipped once the skip lands.
-      confirmDismiss: (_) async {
-        unawaited(_skip(c, h));
-        return false;
+        );
       },
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: t.track,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.fast_forward_rounded, size: 18, color: t.muted),
-            const SizedBox(width: 6),
-            Text(
-              'Skip · ${c.skipsLeft} left',
-              style: theme.textTheme.labelLarge?.copyWith(color: t.muted),
+    );
+
+    final Widget body = !open || h.id == null
+        ? content
+        : Dismissible(
+            key: ValueKey('skip-${h.id}'),
+            direction: c.skipsLeft > 0 && !busy
+                ? DismissDirection.endToStart
+                : DismissDirection.none,
+            // The row stays; the reload marks it skipped once the skip lands.
+            confirmDismiss: (_) async {
+              unawaited(_skip(c, h));
+              return false;
+            },
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              color: t.track,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.fast_forward_rounded, size: 18, color: t.muted),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Skip · ${c.skipsLeft} left',
+                    style: theme.textTheme.labelLarge?.copyWith(color: t.muted),
+                  ),
+                ],
+              ),
             ),
-          ],
+            child: content,
+          );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Pressable(
+          onTap: readOnly ? null : () => _openHabit(context, c, item),
+          scale: 0.99,
+          child: _Card(tint: color, child: body),
         ),
-      ),
-      child: row,
+        // Dots burst out of the check, over the card's edge.
+        Positioned(
+          right: _pad + 4 + 17,
+          top: 0,
+          bottom: 0,
+          child: IgnorePointer(
+            child: Center(
+              child: AnimatedBuilder(
+                animation: _burst,
+                builder: (_, _) => _burst.value >= 1
+                    ? const SizedBox.shrink()
+                    : CustomPaint(
+                        painter: _BurstPainter(_burst.value, color, t.accent),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
+
+/// The check's pop: from 0.3 up past full size, then settling at 1.
+double _pop(double v) {
+  if (v >= 1) return 1;
+  if (v < 0.6) return 0.3 + 0.88 * Curves.easeOut.transform(v / 0.6);
+  return 1.18 - 0.18 * Curves.easeInOut.transform((v - 0.6) / 0.4);
+}
+
+/// 12 dots flying out of a point and fading, in the habit's color and the
+/// accent.
+class _BurstPainter extends CustomPainter {
+  final double t;
+  final Color a, b;
+  const _BurstPainter(this.t, this.a, this.b);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final d = 36 * Curves.easeOut.transform(t);
+    final r = 3.2 * (1 - 0.7 * t);
+    for (var k = 0; k < 12; k++) {
+      final angle = k / 12 * 2 * math.pi;
+      final paint = Paint()..color = (k.isOdd ? a : b).withValues(alpha: 1 - t);
+      canvas.drawCircle(
+        Offset(math.cos(angle) * d, math.sin(angle) * d),
+        r,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BurstPainter old) => old.t != t;
 }
 
 /// The round check button: one for every proof (NFC habits scan their tag).
@@ -1523,9 +1811,124 @@ class _CheckButton extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: t.muted, width: 1.6),
                     ),
-                    child: Icon(Icons.check_rounded, size: 18, color: t.muted),
                   ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The green check of a done habit. Tappable only when the check-in can be
+/// taken back.
+class _DoneCheck extends StatelessWidget {
+  final String name;
+  final double scale;
+  final bool busy;
+  final VoidCallback? onTap;
+  const _DoneCheck({
+    required this.name,
+    required this.scale,
+    required this.busy,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = GlassTokens.of(context);
+    return Semantics(
+      container: true,
+      button: onTap != null,
+      label: onTap != null ? 'Done. Undo $name' : 'Done',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Transform.scale(
+            scale: scale,
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: t.accent,
+              ),
+              child: busy
+                  ? Padding(
+                      padding: const EdgeInsets.all(9),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: t.onAccent,
+                      ),
+                    )
+                  : Icon(Icons.check_rounded, size: 20, color: t.onAccent),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Read 10 pages done" with Undo, for 5 seconds after a manual check-in.
+class _UndoBar extends StatelessWidget {
+  final String name;
+  final VoidCallback onUndo;
+  const _UndoBar({super.key, required this.name, required this.onUndo});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final t = GlassTokens.of(context);
+    return Semantics(
+      liveRegion: true,
+      child: Glass(
+        blur: true,
+        strong: true,
+        radius: _radius,
+        padding: const EdgeInsets.fromLTRB(_pad, 8, 8, 8),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle_rounded, size: 20, color: t.accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '$name done',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Pressable(
+              onTap: onUndo,
+              child: Semantics(
+                button: true,
+                label: 'Undo',
+                excludeSemantics: true,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: t.track,
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  ),
+                  child: Text(
+                    'Undo',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: t.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -41,6 +41,24 @@ class ExecutionRepository {
     );
   }
 
+  /// Builds that may offer Undo before zinc's route ships. Off in every
+  /// release; screenshot and preview builds pass
+  /// `--dart-define=NEON_UNDO_PREVIEW=true`.
+  static const undoPreview = bool.fromEnvironment('NEON_UNDO_PREVIEW');
+
+  /// Takes back today's manual check-in.
+  ///
+  /// SEAM: zinc's undo route is still being built
+  /// (thread T-01a20cac-1b19-70d4-8455-7022a5d5a683). This path is a
+  /// placeholder: replace it with the real route, then turn [undoAvailable]
+  /// on. Until then nothing calls it outside preview builds.
+  Future<Result<void>> undoComplete(String userId, String habitVersionId) {
+    return _api.delete('$_base/$userId/$habitVersionId/executions/today');
+  }
+
+  /// Whether this build shows Undo at all (the route exists).
+  static bool get undoAvailable => undoPreview;
+
   /// Lists the user's executions (`GET /Habit/{userId}/executions`), optionally
   /// filtered by [date] (`yyyy-MM-dd`) and paged via [limit]/[skip].
   Future<Result<List<HabitExecutionRes>>> onDate(
