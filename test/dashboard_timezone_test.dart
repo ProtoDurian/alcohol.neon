@@ -183,7 +183,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text(state.label), findsWidgets);
+      // A done habit shows a green check, labelled Done for screen readers.
+      expect(
+        state.status == 'succeeded'
+            ? find.bySemanticsLabel(state.label)
+            : find.text(state.label),
+        findsWidgets,
+      );
       expect(
         find.text('Complete'),
         state.status == 'not_applicable' ? findsOneWidget : findsNothing,

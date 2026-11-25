@@ -594,11 +594,15 @@ void main() {
           find.textContaining('do not submit the action again'),
           findsOneWidget,
         );
-        final status = find.text(skip ? 'Skipped' : 'Done');
+        final status = skip
+            ? find.text('Skipped')
+            : find.bySemanticsLabel('Done');
         await tester.ensureVisible(status);
         expect(status, findsOneWidget);
         expect(find.text('Complete'), findsNothing);
         expect(find.text('Skip'), findsNothing);
+        // No Undo in a normal build until zinc's undo route ships.
+        expect(find.text('Undo'), findsNothing);
         // Even another failed refresh must not re-enable the successful action.
         await tester.ensureVisible(find.text('Retry'));
         await tester.tap(find.text('Retry'));
@@ -636,7 +640,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Try later'), findsOneWidget);
     expect(find.text('Complete'), findsOneWidget);
-    expect(find.text('Done'), findsNothing);
+    expect(find.bySemanticsLabel('Done'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
     h.dispose();
   });
@@ -688,7 +692,7 @@ void main() {
       expect(find.text('Done!'), findsOneWidget);
       await tester.tap(find.text('Back to dashboard'));
       await tester.pumpAndSettle();
-      expect(find.text('Done'), findsOneWidget);
+      expect(find.bySemanticsLabel('Done'), findsOneWidget);
       expect(find.text('Complete'), findsNothing);
       expect(overviewCalls, 2);
       await tester.pumpWidget(const SizedBox.shrink());

@@ -242,6 +242,60 @@ class DashboardController extends ChangeNotifier {
   /// strip). 0 until the overview loads.
   int get totalSkip => _overview?.totalSkip ?? 0;
 
+  // Habits the user checked in by tapping in the app since the last load.
+  // SEAM: zinc's overview will say this (a field like `canUndo`, which also
+  // covers check-ins from an earlier launch); until then Today only knows
+  // the ones made here.
+  final Set<String> _tapped = {};
+
+  /// Whether today's completion can be taken back: a manual check-in the
+  /// user made by tapping, in a build with zinc's undo route, before the day
+  /// settles (the overview stops listing it as today's then).
+  bool canUndo(HabitOverviewHabitRes habit) {
+    if (!ExecutionRepository.undoAvailable || stale) return false;
+    if (habit.proof == 'strava' || habit.proof == 'nfc') return false;
+    if (todayStatus(habit) != 'succeeded') return false;
+    return _tapped.contains(habit.id);
+  }
+
+  /// The habit to offer Undo for right after the user completed it; cleared
+  /// by the Today screen after 5 seconds.
+  String? undoOffer;
+
+  void clearUndoOffer() {
+    if (undoOffer == null) return;
+    undoOffer = null;
+    notifyListeners();
+  }
+
+  /// Takes back today's manual check-in, then reloads.
+  Future<void> undo(HabitOverviewHabitRes habit) async {
+    final uid = userId;
+    final versionId = habit.version.id;
+    final habitId = habit.id;
+    if (!_current || uid == null || versionId == null || habitId == null) {
+      return;
+    }
+    if (!canUndo(habit) || _busy.contains(habitId)) return;
+    _busy.add(habitId);
+    undoOffer = null;
+    _actionError = null;
+    notifyListeners();
+    final res = await _executions.undoComplete(uid, versionId);
+    if (!_current) return;
+    _busy.remove(habitId);
+    switch (res) {
+      case Ok():
+        _tapped.remove(habitId);
+        _settled[habitId] = (habit.status.today, 'not_applicable');
+        notifyListeners();
+        await load(quiet: true);
+      case Err(:final problem):
+        _actionError = problem;
+        notifyListeners();
+    }
+  }
+
   bool isBusy(HabitOverviewHabitRes habit) =>
       habit.id != null && _busy.contains(habit.id);
 
@@ -340,7 +394,8 @@ class DashboardController extends ChangeNotifier {
     }
     if (stale) return; // yesterday's list: wait for today's
     if (_busy.contains(habitId)) return;
-    if (_settled.containsKey(habitId)) return;
+    // Settled already, unless the user just took it back.
+    if (_settled[habitId] case (_, final s) when s != 'not_applicable') return;
     if (skip && skipsLeft <= 0) return;
 
     _busy.add(habitId);
@@ -354,6 +409,10 @@ class DashboardController extends ChangeNotifier {
     switch (res) {
       case Ok():
         _settled[habitId] = (habit.status.today, skip ? 'skip' : 'succeeded');
+        if (!skip) {
+          _tapped.add(habitId);
+          if (canUndo(habit)) undoOffer = habitId;
+        }
         _busy.remove(habitId);
         notifyListeners();
         await load(quiet: true); // reconcile streaks / debt / skip budget
