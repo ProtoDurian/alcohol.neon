@@ -1786,6 +1786,7 @@ class _CheckButton extends StatelessWidget {
       container: true,
       button: true,
       label: nfc ? 'Scan the tag for $name' : 'Complete $name',
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -1843,6 +1844,7 @@ class _DoneCheck extends StatelessWidget {
       container: true,
       button: onTap != null,
       label: onTap != null ? 'Done. Undo $name' : 'Done',
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -1908,9 +1910,12 @@ class _UndoBar extends StatelessWidget {
             ),
             Pressable(
               onTap: onUndo,
+              // Its own node, apart from the bar's "done" message.
               child: Semantics(
+                container: true,
                 button: true,
                 label: 'Undo',
+                onTap: onUndo,
                 excludeSemantics: true,
                 child: Container(
                   padding: const EdgeInsets.symmetric(

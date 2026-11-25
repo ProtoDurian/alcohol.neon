@@ -656,10 +656,11 @@ void main() {
     );
     await h.start();
     await pumpScreen(tester, h, const DashboardView());
-    await tester.tap(find.text('Complete'));
+    // Through the check's own accessibility action, as TalkBack would.
+    tester.semantics.tap(find.semantics.byLabel('Complete Read a chapter'));
     await tester.pumpAndSettle();
     expect(find.text('Read a chapter done'), findsOneWidget);
-    await tester.tap(find.text('Undo'));
+    tester.semantics.tap(find.semantics.byLabel('Undo'));
     await tester.pumpAndSettle();
     expect(
       h.requests.where(
