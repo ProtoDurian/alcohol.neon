@@ -1,3 +1,10 @@
+## [1.33.2](https://github.com/ProtoDurian/alcohol.neon/compare/v1.33.1...v1.33.2) (2026-11-26)
+
+
+### 🐛 Bug Fixes 🐛
+
+* let the Airwallex card sheet open on Android ([911767d](https://github.com/ProtoDurian/alcohol.neon/commit/911767da5b05f2f71c97b67d7e26f88589d09249))
+
 ## [1.33.1](https://github.com/ProtoDurian/alcohol.neon/compare/v1.33.0...v1.33.1) (2026-11-26)
 
 
