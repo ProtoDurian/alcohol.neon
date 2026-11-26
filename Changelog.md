@@ -1,3 +1,16 @@
+## [1.33.0](https://github.com/ProtoDurian/alcohol.neon/compare/v1.32.0...v1.33.0) (2026-11-26)
+
+
+### ✨ Features ✨
+
+* turn on undo for check-ins tapped in the app ([bc4688e](https://github.com/ProtoDurian/alcohol.neon/commit/bc4688eb9f6023d1a85ccda04f8b3f03339c8f96))
+
+
+### 🐛 Bug Fixes 🐛
+
+* give the round check its own accessibility node ([c64a1d2](https://github.com/ProtoDurian/alcohol.neon/commit/c64a1d2c9cd187f7c58a844a27a038a7ae00ba21))
+* let screen readers press the check, done check and Undo ([c317059](https://github.com/ProtoDurian/alcohol.neon/commit/c317059cf13bc7bbfdc3903024b53d7935428a5a))
+
 ## [1.32.0](https://github.com/ProtoDurian/alcohol.neon/compare/v1.31.0...v1.32.0) (2026-11-25)
 
 
