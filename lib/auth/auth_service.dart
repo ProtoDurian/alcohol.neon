@@ -9,6 +9,7 @@ import '../config/app_config.dart';
 import '../core/launch_timeline.dart';
 import '../core/problem.dart';
 import '../networking/api_client.dart';
+import 'session_storage.dart';
 
 enum AuthStatus { loading, authenticated, unauthenticated, failed }
 
@@ -37,8 +38,10 @@ class AuthService extends ChangeNotifier {
   /// treating it as a transient failure.
   static const tokenTimeout = Duration(seconds: 20);
 
-  /// [client] lets tests inject a fake SDK client; production uses the real one.
-  AuthService(this.config, {LogtoClient? client}) {
+  /// [client] lets tests inject a fake SDK client; production uses the real
+  /// one, saving its tokens through [storage].
+  AuthService(this.config, {LogtoClient? client, SessionStorage? storage})
+    : _storage = storage ?? (client == null ? SessionStorage() : null) {
     _client =
         client ??
         LogtoClient(
@@ -48,9 +51,25 @@ class AuthService extends ChangeNotifier {
             scopes: config.scopes,
             resources: config.apiResources,
           ),
+          storageProvider: _storage,
           httpClient: http.Client(),
         );
     _bootstrap();
+  }
+
+  /// The SDK's token storage; null when a test injects its own client.
+  final SessionStorage? _storage;
+
+  /// Deletes the saved session before any network call, so an app closed
+  /// mid sign-out opens signed out. The SDK's own `signOut` clears storage
+  /// only after revoking the refresh token (and on Android after the
+  /// end-session page too).
+  Future<void> _dropSavedSession() async {
+    try {
+      await _storage?.detach();
+    } catch (_) {
+      // The SDK's signOut below clears it again.
+    }
   }
 
   Future<void> _bootstrap() async {
@@ -67,6 +86,7 @@ class AuthService extends ChangeNotifier {
       // the network and must never hold up the UI (same ordering as signOut).
       _status = AuthStatus.unauthenticated;
       notifyListeners();
+      await _dropSavedSession();
       try {
         await _client.signOut(config.redirectUri);
       } catch (_) {
@@ -90,6 +110,7 @@ class AuthService extends ChangeNotifier {
   Future<void> signIn() async {
     // Let the last sign-out finish clearing the SDK's token storage first.
     await _settle(_signOutWork);
+    _storage?.attach();
     try {
       await _client.signIn(config.redirectUri);
       _status = (await _client.isAuthenticated)
@@ -149,6 +170,7 @@ class AuthService extends ChangeNotifier {
   Future<void>? _signOutWork;
 
   Future<void> _clearSdkSession() async {
+    await _dropSavedSession();
     // A token refresh still in flight writes the SDK's token storage when it
     // lands; let it land first, so the clear below wipes it and the next
     // account never inherits it.
@@ -253,6 +275,7 @@ class AuthService extends ChangeNotifier {
         _endTokenSession();
         _status = AuthStatus.unauthenticated;
         notifyListeners();
+        await _dropSavedSession();
         try {
           await _client.signOut(config.redirectUri);
         } catch (_) {
