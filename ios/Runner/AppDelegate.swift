@@ -20,5 +20,22 @@ import UserNotifications
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "NeonLiveActivity") {
       LiveActivityBridge.register(messenger: registrar.messenger())
     }
+    // Removes widget keys from the App Group. home_widget can't: it stores a
+    // null as NSNull, which UserDefaults rejects by crashing the app.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "NeonWidgetStore") {
+      FlutterMethodChannel(name: "neon/widget_store", binaryMessenger: registrar.messenger())
+        .setMethodCallHandler { call, result in
+          guard call.method == "remove",
+                let args = call.arguments as? [String: Any],
+                let group = args["group"] as? String,
+                let keys = args["keys"] as? [String] else {
+            result(FlutterMethodNotImplemented)
+            return
+          }
+          let defaults = UserDefaults(suiteName: group)
+          keys.forEach { defaults?.removeObject(forKey: $0) }
+          result(nil)
+        }
+    }
   }
 }
