@@ -1,3 +1,10 @@
+## [1.33.3](https://github.com/ProtoDurian/alcohol.neon/compare/v1.33.2...v1.33.3) (2026-11-26)
+
+
+### 🐛 Bug Fixes 🐛
+
+* make sign-out stick when the app closes right away ([37063a7](https://github.com/ProtoDurian/alcohol.neon/commit/37063a780fe61d944384486833dd8530ec4289ef))
+
 ## [1.33.2](https://github.com/ProtoDurian/alcohol.neon/compare/v1.33.1...v1.33.2) (2026-11-26)
 
 
