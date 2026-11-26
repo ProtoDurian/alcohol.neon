@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -40,11 +41,32 @@ class WidgetService {
     }
   }
 
+  /// Removes App Group keys on iOS (AppDelegate.swift). home_widget 0.9.2's iOS
+  /// side stores a null value as NSNull, which NSUserDefaults rejects with an
+  /// uncatchable exception that kills the app. Android's side removes the key.
+  static const _iosStore = MethodChannel('neon/widget_store');
+
+  static Future<void> _remove(List<String> keys) async {
+    if (Platform.isAndroid) {
+      for (final key in keys) {
+        await HomeWidget.saveWidgetData<Object>(key, null);
+      }
+      return;
+    }
+    await _iosStore.invokeMethod<void>('remove', {
+      'group': await _appGroup(),
+      'keys': keys,
+    });
+  }
+
+  static Future<void> _save(String key, String? value) =>
+      value == null ? _remove([key]) : HomeWidget.saveWidgetData(key, value);
+
   /// Remove all account-owned widget state, including optimistic native actions.
   Future<void> clear() async {
     try {
       await HomeWidget.setAppGroupId(await _appGroup());
-      for (final key in [
+      await _remove([
         _dataKey,
         'zinc_base',
         'zinc_token',
@@ -53,9 +75,7 @@ class WidgetService {
         'pending_at',
         // The widget's "Couldn't save. Try again." marker (TodayWidget.kt).
         'failed_id',
-      ]) {
-        await HomeWidget.saveWidgetData<Object>(key, null);
-      }
+      ]);
       await _refresh();
     } catch (_) {
       // Widget not installed / not supported — non-critical.
@@ -92,8 +112,8 @@ class WidgetService {
     try {
       await HomeWidget.setAppGroupId(await _appGroup());
       await HomeWidget.saveWidgetData<String>('zinc_base', baseUrl);
-      await HomeWidget.saveWidgetData<String>('zinc_token', token);
-      await HomeWidget.saveWidgetData<String>('zinc_uid', userId);
+      await _save('zinc_token', token);
+      await _save('zinc_uid', userId);
     } catch (_) {
       // Non-critical.
     }

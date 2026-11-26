@@ -18,6 +18,7 @@ void main() {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const widgetChannel = MethodChannel('home_widget');
+  const storeChannel = MethodChannel('neon/widget_store');
   const notificationChannel = MethodChannel(
     'dexterous.com/flutter/local_notifications',
   );
@@ -46,10 +47,22 @@ void main() {
       await beforeWidgetCall?.call(call);
       final args = call.arguments as Map;
       if (call.method == 'saveWidgetData') {
+        // home_widget's iOS side stores null as NSNull, which kills the app.
+        if (args['data'] == null) {
+          throw PlatformException(code: 'crash', message: 'NSNull write');
+        }
         storage[args['id'] as String] = args['data'];
       }
       if (call.method == 'getWidgetData') return storage[args['id']];
       return true;
+    });
+    messenger.setMockMethodCallHandler(storeChannel, (call) async {
+      final args = call.arguments as Map;
+      expect(args['group'], 'group.cloud.durian.pichu.alcohol.neon.app');
+      for (final key in args['keys'] as List) {
+        storage.remove(key);
+      }
+      return null;
     });
     messenger.setMockMethodCallHandler(notificationChannel, (call) async {
       await beforeNotificationCall?.call(call);
@@ -65,6 +78,7 @@ void main() {
   tearDown(() {
     for (final channel in [
       widgetChannel,
+      storeChannel,
       notificationChannel,
       timezoneChannel,
     ]) {
