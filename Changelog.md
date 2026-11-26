@@ -1,3 +1,10 @@
+## [1.33.1](https://github.com/ProtoDurian/alcohol.neon/compare/v1.33.0...v1.33.1) (2026-11-26)
+
+
+### 🐛 Bug Fixes 🐛
+
+* stop iOS crash when clearing widget data on sign-in ([6f4b0fd](https://github.com/ProtoDurian/alcohol.neon/commit/6f4b0fd5035bfa8c19c0742a2efd0eac239dc399))
+
 ## [1.33.0](https://github.com/ProtoDurian/alcohol.neon/compare/v1.32.0...v1.33.0) (2026-11-26)
 
 
