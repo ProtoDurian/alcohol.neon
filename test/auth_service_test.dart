@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:airwallex_payment_flutter/types/environment.dart';
 import 'package:alcohol_neon/auth/auth_service.dart';
+import 'package:alcohol_neon/auth/session_storage.dart';
 import 'package:alcohol_neon/config/app_config.dart';
 import 'package:alcohol_neon/config/landscape.dart';
 import 'package:logto_dart_sdk/logto_dart_sdk.dart';
@@ -32,6 +33,7 @@ class _FakeLogtoClient extends LogtoClient {
   Completer<AccessToken?>? accessTokenGate;
   Completer<void>? signInGate;
   bool signOutCalled = false;
+  Completer<void>? signOutGate;
   bool _authed = false;
   bool _signingIn = false;
 
@@ -59,6 +61,8 @@ class _FakeLogtoClient extends LogtoClient {
   @override
   Future<void> signOut([String? redirectUri]) async {
     signOutCalled = true;
+    // The real SDK revokes over the network before it clears storage.
+    await signOutGate?.future;
     _authed = false;
   }
 
@@ -94,6 +98,18 @@ class _FakeLogtoClient extends LogtoClient {
 
 /// Mirrors the SDK's unexported `HttpRequestException` (matched structurally
 /// by AuthService._isDeadSessionError): same type name, same statusCode field.
+/// The device's saved storage (flutter_secure_storage in the app).
+class _SavedStore implements LogtoStorageStrategy {
+  final values = <String, String?>{};
+  @override
+  Future<String?> read({required String key}) async => values[key];
+  @override
+  Future<void> write({required String key, required String? value}) async =>
+      values[key] = value;
+  @override
+  Future<void> delete({required String key}) async => values.remove(key);
+}
+
 class HttpRequestException implements Exception {
   final int statusCode;
   final dynamic body;
@@ -436,4 +452,41 @@ void main() {
     );
     expect(AuthService.isAlreadySigningIn(_cancel), isFalse);
   });
+
+  test(
+    'sign-out deletes the saved session before the revoke call returns',
+    () async {
+      // Closing the app during the SDK's revoke call used to keep the saved
+      // tokens, so the next launch opened signed in.
+      final saved = _SavedStore();
+      final storage = SessionStorage(saved);
+      for (final key in SessionStorage.keys) {
+        await storage.write(key: key, value: 'old-$key');
+      }
+      final client = makeClient()
+        ..seedStoredSession()
+        ..signOutGate = Completer<void>();
+      final auth = AuthService(config, client: client, storage: storage);
+      await Future<void>.delayed(Duration.zero);
+      expect(auth.status, AuthStatus.authenticated);
+
+      unawaited(auth.signOut());
+      await Future<void>.delayed(Duration.zero);
+      expect(client.signOutCalled, isTrue, reason: 'revoke still running');
+      expect(saved.values, isEmpty);
+      // This run can still revoke: the SDK reads the refresh token here.
+      expect(
+        await storage.read(key: 'logto_refresh_token'),
+        'old-logto_refresh_token',
+      );
+      // A token refresh landing now must not save the old session again.
+      await storage.write(key: 'logto_id_token', value: 'late');
+      expect(saved.values, isEmpty);
+
+      client.signOutGate!.complete();
+      await auth.signIn();
+      await storage.write(key: 'logto_id_token', value: 'new');
+      expect(saved.values['logto_id_token'], 'new');
+    },
+  );
 }
