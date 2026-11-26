@@ -1780,9 +1780,13 @@ class _CheckButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = GlassTokens.of(context);
+    // Its own node, so screen readers (and Android's Robo) reach the check
+    // apart from the card, whose tap opens the habit.
     return Semantics(
+      container: true,
       button: true,
       label: nfc ? 'Scan the tag for $name' : 'Complete $name',
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -1840,6 +1844,7 @@ class _DoneCheck extends StatelessWidget {
       container: true,
       button: onTap != null,
       label: onTap != null ? 'Done. Undo $name' : 'Done',
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -1905,9 +1910,12 @@ class _UndoBar extends StatelessWidget {
             ),
             Pressable(
               onTap: onUndo,
+              // Its own node, apart from the bar's "done" message.
               child: Semantics(
+                container: true,
                 button: true,
                 label: 'Undo',
+                onTap: onUndo,
                 excludeSemantics: true,
                 child: Container(
                   padding: const EdgeInsets.symmetric(

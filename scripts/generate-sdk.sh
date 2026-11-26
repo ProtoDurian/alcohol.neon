@@ -29,9 +29,10 @@ fi
 # zinc marks HabitOverviewHabitRes.sortOrder required, but zinc from before
 # alcohol.zinc#97 (still on some landscapes) doesn't send it, and every neon
 # release ships to all three. Keep it optional so those overviews still decode;
-# Today turns reorder off when it's missing.
-echo "==> Making HabitOverviewHabitRes.sortOrder optional"
-jq '.components.schemas.HabitOverviewHabitRes.required |= map(select(. != "sortOrder"))' \
+# Today turns reorder off when it's missing. canUndo (alcohol.zinc#118) is the
+# same: an older zinc sends none, and Today then offers no undo.
+echo "==> Making HabitOverviewHabitRes.sortOrder and canUndo optional"
+jq '.components.schemas.HabitOverviewHabitRes.required |= map(select(. != "sortOrder" and . != "canUndo"))' \
   "$SPEC_FILE" >"$SPEC_FILE.tmp"
 mv "$SPEC_FILE.tmp" "$SPEC_FILE"
 
