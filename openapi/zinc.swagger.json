@@ -7069,6 +7069,10 @@
           "freezeBase": {
             "type": "integer",
             "format": "int32"
+          },
+          "vacationMaxDays": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
