@@ -1,3 +1,11 @@
+## [1.34.0](https://github.com/ProtoDurian/alcohol.neon/compare/v1.33.3...v1.34.0) (2026-11-27)
+
+
+### ✨ Features ✨
+
+* plan limits for skips and vacations with upgrade prompts ([1a84800](https://github.com/ProtoDurian/alcohol.neon/commit/1a848002de2122b788bc2bda72f7efa303260e54))
+* regenerate zinc client against pichu v1.49.0 ([66589d4](https://github.com/ProtoDurian/alcohol.neon/commit/66589d406400491872fff9c7a90695b96a660844))
+
 ## [1.33.3](https://github.com/ProtoDurian/alcohol.neon/compare/v1.33.2...v1.33.3) (2026-11-26)
 
 
