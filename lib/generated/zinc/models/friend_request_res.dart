@@ -14,9 +14,10 @@ class FriendRequestRes {
     this.userId,
     this.username,
   });
-  
-  factory FriendRequestRes.fromJson(Map<String, Object?> json) => _$FriendRequestResFromJson(json);
-  
+
+  factory FriendRequestRes.fromJson(Map<String, Object?> json) =>
+      _$FriendRequestResFromJson(json);
+
   final String requestId;
   final String? userId;
   final String? username;

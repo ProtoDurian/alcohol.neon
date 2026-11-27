@@ -10,14 +10,11 @@ part 'owed_res.g.dart';
 
 @JsonSerializable()
 class OwedRes {
-  const OwedRes({
-    this.total,
-    this.currency,
-    this.items,
-  });
-  
-  factory OwedRes.fromJson(Map<String, Object?> json) => _$OwedResFromJson(json);
-  
+  const OwedRes({this.total, this.currency, this.items});
+
+  factory OwedRes.fromJson(Map<String, Object?> json) =>
+      _$OwedResFromJson(json);
+
   final String? total;
   final String? currency;
   final List<OwedItemRes>? items;

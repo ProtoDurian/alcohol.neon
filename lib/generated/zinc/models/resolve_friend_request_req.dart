@@ -8,12 +8,11 @@ part 'resolve_friend_request_req.g.dart';
 
 @JsonSerializable()
 class ResolveFriendRequestReq {
-  const ResolveFriendRequestReq({
-    required this.decision,
-  });
-  
-  factory ResolveFriendRequestReq.fromJson(Map<String, Object?> json) => _$ResolveFriendRequestReqFromJson(json);
-  
+  const ResolveFriendRequestReq({required this.decision});
+
+  factory ResolveFriendRequestReq.fromJson(Map<String, Object?> json) =>
+      _$ResolveFriendRequestReqFromJson(json);
+
   final String decision;
 
   Map<String, Object?> toJson() => _$ResolveFriendRequestReqToJson(this);

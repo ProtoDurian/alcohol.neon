@@ -8,12 +8,11 @@ part 'run_disbursement_res.g.dart';
 
 @JsonSerializable()
 class RunDisbursementRes {
-  const RunDisbursementRes({
-    required this.completed,
-  });
-  
-  factory RunDisbursementRes.fromJson(Map<String, Object?> json) => _$RunDisbursementResFromJson(json);
-  
+  const RunDisbursementRes({required this.completed});
+
+  factory RunDisbursementRes.fromJson(Map<String, Object?> json) =>
+      _$RunDisbursementResFromJson(json);
+
   final int completed;
 
   Map<String, Object?> toJson() => _$RunDisbursementResToJson(this);

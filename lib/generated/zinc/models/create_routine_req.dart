@@ -8,12 +8,11 @@ part 'create_routine_req.g.dart';
 
 @JsonSerializable()
 class CreateRoutineReq {
-  const CreateRoutineReq({
-    this.name,
-  });
-  
-  factory CreateRoutineReq.fromJson(Map<String, Object?> json) => _$CreateRoutineReqFromJson(json);
-  
+  const CreateRoutineReq({this.name});
+
+  factory CreateRoutineReq.fromJson(Map<String, Object?> json) =>
+      _$CreateRoutineReqFromJson(json);
+
   final String? name;
 
   Map<String, Object?> toJson() => _$CreateRoutineReqToJson(this);

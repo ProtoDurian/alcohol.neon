@@ -25,6 +25,8 @@ import '../inbox/inbox_bell.dart';
 import '../nfc/nfc_service.dart';
 import '../nfc/tap_complete_view.dart';
 import '../profile/profile_view.dart';
+import '../subscription/tier.dart';
+import '../subscription/upgrade_sheet.dart';
 import '../vacation/vacation_list_view.dart';
 import 'buffers_controller.dart';
 import 'dashboard_controller.dart';
@@ -107,9 +109,51 @@ Future<void> _complete(DashboardController c, HabitOverviewHabitRes h) {
   return c.complete(h);
 }
 
-Future<void> _skip(DashboardController c, HabitOverviewHabitRes h) {
+/// Skips [h] today after the user confirms, saying how many skips are left.
+/// With none left, or when zinc refuses for the plan, it offers the upgrade.
+Future<void> _skip(
+  BuildContext context,
+  DashboardController c,
+  HabitOverviewHabitRes h,
+) async {
+  if (c.skipsLeft <= 0) return _skipLimit(context, c);
+  final ok = await showGlassConfirm(
+    context,
+    title: 'Skip ${h.name ?? 'this habit'} today?',
+    message: skipConfirmMessage(c.skipsLeft, c.totalSkip),
+    confirmLabel: 'Skip today',
+    destructive: false,
+  );
+  if (!ok || !context.mounted) return;
   HapticFeedback.selectionClick();
-  return c.skip(h);
+  await c.skip(h);
+  if (!context.mounted) return;
+  if (c.actionError case final p? when isTierProblem(p)) {
+    c.clearActionError();
+    return _skipLimit(context, c);
+  }
+}
+
+Future<void> _skipLimit(BuildContext context, DashboardController c) {
+  final now = DateTime.now();
+  final back = DateTime(now.year, now.month + 1);
+  return showUpgradeSheet(
+    context,
+    limit: PlanLimit.skips,
+    title: 'No skips left this month',
+    message:
+        'You have used all ${c.totalSkip} skips this month. '
+        'They come back on ${back.day} ${_monthNames[back.month - 1]}.',
+  );
+}
+
+/// The skip confirmation: "This uses 1 skip. You'll have 2 of 5 left this
+/// month." [left] is before this skip.
+String skipConfirmMessage(int left, int total) {
+  final after = left - 1;
+  return after <= 0
+      ? 'This uses your last skip this month.'
+      : 'This uses 1 skip. You’ll have $after of $total left this month.';
 }
 
 /// The one check action for every proof: an NFC habit scans its tag, any
@@ -903,9 +947,8 @@ class _NextUpCard extends StatelessWidget {
                   GlassButton(
                     label: 'Skip',
                     secondary: true,
-                    onPressed: busy || c.skipsLeft <= 0
-                        ? null
-                        : () => _skip(c, h),
+                    // With none left, Skip offers the upgrade instead.
+                    onPressed: busy ? null : () => _skip(context, c, h),
                   ),
                 ],
               ),
@@ -1673,12 +1716,13 @@ class _HabitRowState extends State<_HabitRow>
         ? content
         : Dismissible(
             key: ValueKey('skip-${h.id}'),
-            direction: c.skipsLeft > 0 && !busy
-                ? DismissDirection.endToStart
-                : DismissDirection.none,
+            // With none left, the swipe offers the upgrade instead.
+            direction: busy
+                ? DismissDirection.none
+                : DismissDirection.endToStart,
             // The row stays; the reload marks it skipped once the skip lands.
             confirmDismiss: (_) async {
-              unawaited(_skip(c, h));
+              unawaited(_skip(context, c, h));
               return false;
             },
             background: Container(

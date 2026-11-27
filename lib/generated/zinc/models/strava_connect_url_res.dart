@@ -8,13 +8,11 @@ part 'strava_connect_url_res.g.dart';
 
 @JsonSerializable()
 class StravaConnectUrlRes {
-  const StravaConnectUrlRes({
-    this.url,
-    this.appUrl,
-  });
-  
-  factory StravaConnectUrlRes.fromJson(Map<String, Object?> json) => _$StravaConnectUrlResFromJson(json);
-  
+  const StravaConnectUrlRes({this.url, this.appUrl});
+
+  factory StravaConnectUrlRes.fromJson(Map<String, Object?> json) =>
+      _$StravaConnectUrlResFromJson(json);
+
   final String? url;
   final String? appUrl;
 

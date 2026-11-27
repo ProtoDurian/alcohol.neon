@@ -10,13 +10,11 @@ part 'friend_stake_res.g.dart';
 
 @JsonSerializable()
 class FriendStakeRes {
-  const FriendStakeRes({
-    required this.habitId,
-    this.friends,
-  });
-  
-  factory FriendStakeRes.fromJson(Map<String, Object?> json) => _$FriendStakeResFromJson(json);
-  
+  const FriendStakeRes({required this.habitId, this.friends});
+
+  factory FriendStakeRes.fromJson(Map<String, Object?> json) =>
+      _$FriendStakeResFromJson(json);
+
   final String habitId;
   final List<FriendWatcherRes>? friends;
 

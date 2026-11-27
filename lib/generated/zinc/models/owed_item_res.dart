@@ -19,9 +19,10 @@ class OwedItemRes {
     this.state,
     this.reason,
   });
-  
-  factory OwedItemRes.fromJson(Map<String, Object?> json) => _$OwedItemResFromJson(json);
-  
+
+  factory OwedItemRes.fromJson(Map<String, Object?> json) =>
+      _$OwedItemResFromJson(json);
+
   final String habitId;
   final String? habitName;
   final String? localDate;

@@ -21,9 +21,10 @@ class InboxNotificationRes {
     this.readAtUtc,
     this.friendRequest,
   });
-  
-  factory InboxNotificationRes.fromJson(Map<String, Object?> json) => _$InboxNotificationResFromJson(json);
-  
+
+  factory InboxNotificationRes.fromJson(Map<String, Object?> json) =>
+      _$InboxNotificationResFromJson(json);
+
   final String id;
   final String? kind;
   final String? title;

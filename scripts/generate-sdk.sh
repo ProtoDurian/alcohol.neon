@@ -36,6 +36,13 @@ jq '.components.schemas.HabitOverviewHabitRes.required |= map(select(. != "sortO
   "$SPEC_FILE" >"$SPEC_FILE.tmp"
 mv "$SPEC_FILE.tmp" "$SPEC_FILE"
 
+# PlanRes.vacationMaxDays (plan limits) is new too: an older zinc sends none,
+# and the vacation calendar then sets no length limit (zinc still enforces it).
+echo "==> Making PlanRes.vacationMaxDays optional"
+jq '.components.schemas.PlanRes.required |= map(select(. != "vacationMaxDays"))' \
+  "$SPEC_FILE" >"$SPEC_FILE.tmp"
+mv "$SPEC_FILE.tmp" "$SPEC_FILE"
+
 echo "==> Generating DTOs (swagger_parser)"
 rm -rf "$OUT"
 flutter pub run swagger_parser

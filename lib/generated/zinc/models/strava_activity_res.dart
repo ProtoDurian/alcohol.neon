@@ -18,9 +18,10 @@ class StravaActivityRes {
     this.sportType,
     this.habitId,
   });
-  
-  factory StravaActivityRes.fromJson(Map<String, Object?> json) => _$StravaActivityResFromJson(json);
-  
+
+  factory StravaActivityRes.fromJson(Map<String, Object?> json) =>
+      _$StravaActivityResFromJson(json);
+
   final String? id;
   final String? name;
   final String? sportType;

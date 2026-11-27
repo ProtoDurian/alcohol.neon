@@ -8,12 +8,11 @@ part 'update_routine_req.g.dart';
 
 @JsonSerializable()
 class UpdateRoutineReq {
-  const UpdateRoutineReq({
-    this.name,
-  });
-  
-  factory UpdateRoutineReq.fromJson(Map<String, Object?> json) => _$UpdateRoutineReqFromJson(json);
-  
+  const UpdateRoutineReq({this.name});
+
+  factory UpdateRoutineReq.fromJson(Map<String, Object?> json) =>
+      _$UpdateRoutineReqFromJson(json);
+
   final String? name;
 
   Map<String, Object?> toJson() => _$UpdateRoutineReqToJson(this);

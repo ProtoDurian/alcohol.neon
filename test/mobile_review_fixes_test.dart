@@ -589,6 +589,12 @@ void main() {
         await pumpScreen(tester, h, const DashboardView());
         await tester.tap(find.text(skip ? 'Skip' : 'Complete'));
         await tester.pumpAndSettle();
+        if (skip) {
+          // The confirmation says how many skips are left.
+          expect(find.textContaining('of 3 left this month'), findsOneWidget);
+          await tester.tap(find.text('Skip today'));
+          await tester.pumpAndSettle();
+        }
         expect(find.text('Could not refresh the dashboard'), findsOneWidget);
         expect(
           find.textContaining('do not submit the action again'),
@@ -619,12 +625,34 @@ void main() {
           ),
           hasLength(1),
         );
-        expect(overviewCalls, 4);
+        // Closing the skip confirmation refreshes Today once more.
+        expect(overviewCalls, skip ? 5 : 4);
         await tester.pumpWidget(const SizedBox.shrink());
         h.dispose();
       },
     );
   }
+
+  testWidgets('with no skips left, Skip offers the upgrade and sends nothing', (
+    tester,
+  ) async {
+    final h = SessionHarness(
+      respond: (r) async {
+        if (!r.url.path.endsWith('/overview')) return null;
+        // Used more than the new limit (rollout month): left stays at 0.
+        return jsonResponse({...overviewBody(), 'usedSkip': 7, 'totalSkip': 5});
+      },
+    );
+    await h.start();
+    await pumpScreen(tester, h, const DashboardView());
+    expect(find.text('0/5'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(find.text('No skips left this month'), findsOneWidget);
+    expect(h.requests.where((r) => r.method == 'POST'), isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+    h.dispose();
+  });
 
   testWidgets('a check-in tapped in the app can be undone from the Undo bar', (
     tester,

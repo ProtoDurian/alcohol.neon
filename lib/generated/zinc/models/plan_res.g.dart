@@ -15,6 +15,7 @@ PlanRes _$PlanResFromJson(Map<String, dynamic> json) => PlanRes(
   key: json['key'] as String?,
   currency: json['currency'] as String?,
   habitsMax: (json['habitsMax'] as num?)?.toInt(),
+  vacationMaxDays: (json['vacationMaxDays'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$PlanResToJson(PlanRes instance) => <String, dynamic>{
@@ -26,4 +27,5 @@ Map<String, dynamic> _$PlanResToJson(PlanRes instance) => <String, dynamic>{
   'skipsMonthly': instance.skipsMonthly,
   'vacationWindowsYearly': instance.vacationWindowsYearly,
   'freezeBase': instance.freezeBase,
+  'vacationMaxDays': instance.vacationMaxDays,
 };

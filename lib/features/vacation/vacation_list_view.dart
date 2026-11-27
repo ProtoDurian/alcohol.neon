@@ -9,6 +9,8 @@ import '../../widgets/app_loader.dart';
 import '../../widgets/glass_list.dart';
 import '../../widgets/glass_modal.dart';
 import '../../widgets/glass_page.dart';
+import '../subscription/tier.dart';
+import '../subscription/upgrade_sheet.dart';
 import 'vacation_controller.dart';
 import 'vacation_create_view.dart';
 
@@ -39,14 +41,36 @@ class _VacationPage extends StatefulWidget {
 class _VacationPageState extends State<_VacationPage> {
   bool _showPast = false;
 
-  Future<void> _openCreate(VacationController c) => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => ChangeNotifierProvider.value(
-        value: c,
-        child: const VacationCreateView(),
+  /// Opens the create page, or at the plan's yearly limit the upgrade prompt.
+  Future<void> _openCreate(VacationController c) {
+    if (c.atLimit) return _showLimit(c);
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: c,
+          child: const VacationCreateView(),
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  Future<void> _showLimit(VacationController c) {
+    final allowed = c.allowedThisYear ?? 0;
+    final name = tierLabel(c.tier ?? '');
+    final plan = name.isEmpty ? 'Your plan' : 'Your $name plan';
+    return showUpgradeSheet(
+      context,
+      limit: PlanLimit.vacations,
+      title: allowed == 0
+          ? 'Vacations aren’t in your plan'
+          : 'No vacations left this year',
+      message: allowed == 0
+          ? '$plan doesn’t include vacations.'
+          : '$plan gives $allowed vacation${allowed == 1 ? '' : 's'} a '
+                'year, and you have used ${c.usedThisYear}. You can add '
+                'more from 1 January.',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,17 +83,21 @@ class _VacationPageState extends State<_VacationPage> {
       onRefresh: ready ? c.load : null,
       actions: [
         if (ready && ios)
-          GlassIconButton(
-            icon: Icons.add_rounded,
-            label: 'Schedule vacation',
-            onTap: () => _openCreate(c),
+          // At the limit it looks off and explains why when tapped.
+          Opacity(
+            opacity: c.atLimit ? 0.4 : 1,
+            child: GlassIconButton(
+              icon: Icons.add_rounded,
+              label: 'Schedule vacation',
+              onTap: () => _openCreate(c),
+            ),
           ),
       ],
       floatingActionButton: ready && !ios && c.items.isNotEmpty
           ? FloatingActionButton(
               tooltip: 'Schedule vacation',
-              backgroundColor: t.accent,
-              foregroundColor: t.onAccent,
+              backgroundColor: c.atLimit ? t.track : t.accent,
+              foregroundColor: c.atLimit ? t.muted : t.onAccent,
               elevation: 2,
               onPressed: () => _openCreate(c),
               child: const Icon(Icons.add_rounded),
@@ -110,9 +138,30 @@ class _VacationPageState extends State<_VacationPage> {
             onPressed: c.clearActionError,
           ),
         ),
+      if (c.allowedThisYear case final allowed?)
+        GlassSection(
+          children: [
+            GlassRow(
+              leading: const Icon(
+                Icons.beach_access_rounded,
+                color: AppColors.vacation,
+              ),
+              title: allowed == 0
+                  ? 'No vacations on your plan'
+                  : '${c.usedThisYear} of $allowed used this year',
+              subtitle: c.atLimit
+                  ? 'Tap to see your options'
+                  : c.maxDays == null
+                  ? null
+                  : 'Up to ${c.maxDays} days each',
+              onTap: c.atLimit ? () => _showLimit(c) : null,
+              chevron: c.atLimit,
+            ),
+          ],
+        ),
       if (c.items.isEmpty) ...[
         const SizedBox(height: 8),
-        _Empty(onSchedule: () => _openCreate(c)),
+        _Empty(atLimit: c.atLimit, onSchedule: () => _openCreate(c)),
       ],
       for (final item in active) ...[
         const SizedBox(height: 8),
@@ -375,8 +424,9 @@ class _UpcomingRow extends StatelessWidget {
 }
 
 class _Empty extends StatelessWidget {
+  final bool atLimit;
   final VoidCallback onSchedule;
-  const _Empty({required this.onSchedule});
+  const _Empty({required this.atLimit, required this.onSchedule});
 
   @override
   Widget build(BuildContext context) {
@@ -419,6 +469,7 @@ class _Empty extends StatelessWidget {
             width: double.infinity,
             child: GlassButton(
               label: 'Schedule a vacation',
+              secondary: atLimit,
               onPressed: onSchedule,
             ),
           ),

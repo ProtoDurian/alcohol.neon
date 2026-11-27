@@ -13,9 +13,10 @@ class InboxFriendRequestRes {
     this.requestId,
     this.resolvedAtUtc,
   });
-  
-  factory InboxFriendRequestRes.fromJson(Map<String, Object?> json) => _$InboxFriendRequestResFromJson(json);
-  
+
+  factory InboxFriendRequestRes.fromJson(Map<String, Object?> json) =>
+      _$InboxFriendRequestResFromJson(json);
+
   final String? requestId;
   final String status;
   final DateTime? resolvedAtUtc;

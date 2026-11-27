@@ -8,12 +8,11 @@ part 'friend_invite_res.g.dart';
 
 @JsonSerializable()
 class FriendInviteRes {
-  const FriendInviteRes({
-    this.code,
-  });
-  
-  factory FriendInviteRes.fromJson(Map<String, Object?> json) => _$FriendInviteResFromJson(json);
-  
+  const FriendInviteRes({this.code});
+
+  factory FriendInviteRes.fromJson(Map<String, Object?> json) =>
+      _$FriendInviteResFromJson(json);
+
   final String? code;
 
   Map<String, Object?> toJson() => _$FriendInviteResToJson(this);
