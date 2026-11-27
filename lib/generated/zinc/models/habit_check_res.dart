@@ -8,14 +8,11 @@ part 'habit_check_res.g.dart';
 
 @JsonSerializable()
 class HabitCheckRes {
-  const HabitCheckRes({
-    this.habitId,
-    this.date,
-    this.status,
-  });
-  
-  factory HabitCheckRes.fromJson(Map<String, Object?> json) => _$HabitCheckResFromJson(json);
-  
+  const HabitCheckRes({this.habitId, this.date, this.status});
+
+  factory HabitCheckRes.fromJson(Map<String, Object?> json) =>
+      _$HabitCheckResFromJson(json);
+
   final String? habitId;
   final String? date;
   final String? status;

@@ -17,9 +17,10 @@ class PluginManifestRes {
     this.settingsSchema,
     this.minTier,
   });
-  
-  factory PluginManifestRes.fromJson(Map<String, Object?> json) => _$PluginManifestResFromJson(json);
-  
+
+  factory PluginManifestRes.fromJson(Map<String, Object?> json) =>
+      _$PluginManifestResFromJson(json);
+
   final String? key;
   final String? name;
   final int version;

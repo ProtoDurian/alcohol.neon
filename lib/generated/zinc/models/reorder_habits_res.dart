@@ -8,12 +8,11 @@ part 'reorder_habits_res.g.dart';
 
 @JsonSerializable()
 class ReorderHabitsRes {
-  const ReorderHabitsRes({
-    this.habitIds,
-  });
-  
-  factory ReorderHabitsRes.fromJson(Map<String, Object?> json) => _$ReorderHabitsResFromJson(json);
-  
+  const ReorderHabitsRes({this.habitIds});
+
+  factory ReorderHabitsRes.fromJson(Map<String, Object?> json) =>
+      _$ReorderHabitsResFromJson(json);
+
   final List<String>? habitIds;
 
   Map<String, Object?> toJson() => _$ReorderHabitsResToJson(this);

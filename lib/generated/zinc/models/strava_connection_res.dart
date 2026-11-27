@@ -8,13 +8,11 @@ part 'strava_connection_res.g.dart';
 
 @JsonSerializable()
 class StravaConnectionRes {
-  const StravaConnectionRes({
-    required this.connected,
-    this.connectedAtUtc,
-  });
-  
-  factory StravaConnectionRes.fromJson(Map<String, Object?> json) => _$StravaConnectionResFromJson(json);
-  
+  const StravaConnectionRes({required this.connected, this.connectedAtUtc});
+
+  factory StravaConnectionRes.fromJson(Map<String, Object?> json) =>
+      _$StravaConnectionResFromJson(json);
+
   final bool connected;
   final DateTime? connectedAtUtc;
 

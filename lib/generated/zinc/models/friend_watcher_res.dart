@@ -8,13 +8,11 @@ part 'friend_watcher_res.g.dart';
 
 @JsonSerializable()
 class FriendWatcherRes {
-  const FriendWatcherRes({
-    this.userId,
-    this.username,
-  });
-  
-  factory FriendWatcherRes.fromJson(Map<String, Object?> json) => _$FriendWatcherResFromJson(json);
-  
+  const FriendWatcherRes({this.userId, this.username});
+
+  factory FriendWatcherRes.fromJson(Map<String, Object?> json) =>
+      _$FriendWatcherResFromJson(json);
+
   final String? userId;
   final String? username;
 

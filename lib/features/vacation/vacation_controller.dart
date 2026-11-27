@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/date_format.dart';
 import '../../core/problem.dart';
+import '../../data/subscription_repository.dart';
 import '../../data/vacation_repository.dart';
 import '../../generated/zinc/models/create_vacation_req.dart';
+import '../../generated/zinc/models/plan_res.dart';
 import '../../generated/zinc/models/vacation_res.dart';
 import '../../session/session_controller.dart';
 
@@ -30,15 +32,19 @@ class VacationItem {
 class VacationController extends ChangeNotifier {
   final String? userId;
   final VacationRepository _vacations;
+  final SubscriptionRepository _subscriptions;
 
   VacationController(SessionController session)
     : userId = session.userId,
-      _vacations = session.vacations;
+      _vacations = session.vacations,
+      _subscriptions = session.subscriptions;
 
   VacationPhase _phase = VacationPhase.loading;
   Problem? _error;
   Problem? _actionError;
   List<VacationItem> _items = const [];
+  String? _tier;
+  List<PlanRes> _plans = const [];
   final Set<String> _busy =
       {}; // vacation ids with an in-flight delete/end-today
 
@@ -49,6 +55,36 @@ class VacationController extends ChangeNotifier {
   Problem? get actionError => _actionError;
 
   List<VacationItem> get items => _items;
+
+  /// The user's tier, such as `pro`. Null until it loads, or when it failed.
+  String? get tier => _tier;
+
+  /// The limits of the user's plan. Null when they didn't load: the screen
+  /// then shows no count and no length limit, and zinc still enforces both.
+  PlanRes? get plan => _plans
+      .where((p) => p.key?.toLowerCase() == _tier?.toLowerCase())
+      .firstOrNull;
+
+  /// Vacations a year on the plan.
+  int? get allowedThisYear => plan?.vacationWindowsYearly;
+
+  /// Vacations that start this year. zinc counts a vacation once, in the year
+  /// it starts, even when it runs into January.
+  int get usedThisYear =>
+      vacationsStartingIn(_items.map((i) => i.res), DateTime.now().year);
+
+  /// Whether the plan allows no more vacations this year.
+  bool get atLimit => switch (allowedThisYear) {
+    final allowed? => usedThisYear >= allowed,
+    null => false,
+  };
+
+  /// The longest vacation the plan allows, in days. Null when there is no
+  /// limit to show (an older zinc, or plans didn't load).
+  int? get maxDays => switch (plan?.vacationMaxDays) {
+    final d? when d > 0 => d,
+    _ => null,
+  };
 
   bool isBusy(String id) => _busy.contains(id);
 
@@ -74,7 +110,9 @@ class VacationController extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    final limits = _loadLimits(uid);
     final res = await _vacations.list(uid);
+    await limits;
     switch (res) {
       case Ok(:final value):
         _items = _decorate(value);
@@ -84,6 +122,15 @@ class VacationController extends ChangeNotifier {
         _phase = VacationPhase.error;
     }
     notifyListeners();
+  }
+
+  /// The user's tier and the plans' limits. A failure just hides the count.
+  Future<void> _loadLimits(String uid) async {
+    final plans = _plans.isEmpty ? _subscriptions.plans() : null;
+    if (await _subscriptions.current(uid) case Ok(:final value)) {
+      _tier = value.tier;
+    }
+    if (await plans case Ok(:final value)) _plans = value;
   }
 
   /// Quiet refetch that updates the list without flipping to the loading state
@@ -188,6 +235,12 @@ class VacationController extends ChangeNotifier {
     return decorated;
   }
 }
+
+/// How many of [vacations] start in [year]. A vacation over New Year counts
+/// for its starting year only, as zinc counts it.
+int vacationsStartingIn(Iterable<VacationRes> vacations, int year) => vacations
+    .where((v) => tryParseStandardDate(v.startDate)?.year == year)
+    .length;
 
 /// upcoming/active/ended for a window, computed against "today" (date-only). zinc
 /// evaluates this in the vacation's own timezone; we don't ship a tz database, so

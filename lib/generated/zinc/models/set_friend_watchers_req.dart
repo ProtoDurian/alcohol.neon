@@ -8,12 +8,11 @@ part 'set_friend_watchers_req.g.dart';
 
 @JsonSerializable()
 class SetFriendWatchersReq {
-  const SetFriendWatchersReq({
-    this.friendUserIds,
-  });
-  
-  factory SetFriendWatchersReq.fromJson(Map<String, Object?> json) => _$SetFriendWatchersReqFromJson(json);
-  
+  const SetFriendWatchersReq({this.friendUserIds});
+
+  factory SetFriendWatchersReq.fromJson(Map<String, Object?> json) =>
+      _$SetFriendWatchersReqFromJson(json);
+
   final List<String>? friendUserIds;
 
   Map<String, Object?> toJson() => _$SetFriendWatchersReqToJson(this);

@@ -8,12 +8,11 @@ part 'inbox_count_res.g.dart';
 
 @JsonSerializable()
 class InboxCountRes {
-  const InboxCountRes({
-    required this.count,
-  });
-  
-  factory InboxCountRes.fromJson(Map<String, Object?> json) => _$InboxCountResFromJson(json);
-  
+  const InboxCountRes({required this.count});
+
+  factory InboxCountRes.fromJson(Map<String, Object?> json) =>
+      _$InboxCountResFromJson(json);
+
   final int count;
 
   Map<String, Object?> toJson() => _$InboxCountResToJson(this);

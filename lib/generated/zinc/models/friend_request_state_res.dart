@@ -14,9 +14,10 @@ class FriendRequestStateRes {
     required this.createdAtUtc,
     this.resolvedAtUtc,
   });
-  
-  factory FriendRequestStateRes.fromJson(Map<String, Object?> json) => _$FriendRequestStateResFromJson(json);
-  
+
+  factory FriendRequestStateRes.fromJson(Map<String, Object?> json) =>
+      _$FriendRequestStateResFromJson(json);
+
   final String requestId;
   final String status;
   final DateTime createdAtUtc;

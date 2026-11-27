@@ -17,9 +17,10 @@ class SubscriptionRes {
     this.periodEnd,
     this.nextTier,
   });
-  
-  factory SubscriptionRes.fromJson(Map<String, Object?> json) => _$SubscriptionResFromJson(json);
-  
+
+  factory SubscriptionRes.fromJson(Map<String, Object?> json) =>
+      _$SubscriptionResFromJson(json);
+
   final String? userId;
   final String? tier;
   final String? status;

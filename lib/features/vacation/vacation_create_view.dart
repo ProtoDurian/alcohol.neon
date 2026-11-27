@@ -9,6 +9,7 @@ import '../../widgets/app_loader.dart';
 import '../../widgets/glass_list.dart';
 import '../../widgets/glass_page.dart';
 import '../settings/timezone_picker.dart';
+import '../subscription/upgrade_sheet.dart';
 import 'vacation_controller.dart';
 import 'vacation_list_view.dart';
 
@@ -109,6 +110,14 @@ class _VacationCreateViewState extends State<VacationCreateView> {
     switch (res) {
       case Ok():
         Navigator.of(context).pop(true);
+      case Err(:final problem) when _isYearlyLimit(problem):
+        setState(() => _submitting = false);
+        await showUpgradeSheet(
+          context,
+          limit: PlanLimit.vacations,
+          title: 'No vacations left this year',
+          message: 'You have used all the vacations your plan gives this year.',
+        );
       case Err(:final problem):
         setState(() {
           _submitting = false;
@@ -122,7 +131,20 @@ class _VacationCreateViewState extends State<VacationCreateView> {
   /// detail is the internal string "Invalid CreateVacationReq" — so we match on
   /// title/type/detail BEFORE falling back to the server's detail (otherwise the
   /// raw internal string would leak to the user).
+  /// zinc's yearly-count refusal. The length refusal says "days per
+  /// vacation" and shows as a banner instead.
+  bool _isYearlyLimit(Problem p) {
+    final tier =
+        p.type.toLowerCase().contains('tier') ||
+        p.title.toLowerCase().contains('insufficient');
+    return tier && !_isLengthLimit(p);
+  }
+
+  bool _isLengthLimit(Problem p) =>
+      (p.detail ?? '').toLowerCase().contains('days per vacation');
+
   String _friendly(Problem p) {
+    if (_isLengthLimit(p)) return p.displayMessage;
     final type = p.type.toLowerCase();
     final title = p.title.toLowerCase();
     final detail = p.detail?.trim() ?? '';
@@ -148,6 +170,7 @@ class _VacationCreateViewState extends State<VacationCreateView> {
   Widget build(BuildContext context) {
     final canSubmit =
         _start != null && _end != null && _timezone != null && !_submitting;
+    final maxDays = context.watch<VacationController>().maxDays;
     return GlassPage(
       title: 'Schedule vacation',
       dock: _loadingTz
@@ -171,12 +194,22 @@ class _VacationCreateViewState extends State<VacationCreateView> {
               GlassHeading('Dates'),
               Glass(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                child: RangeCalendar(start: _start, end: _end, onTap: _tapDay),
+                child: RangeCalendar(
+                  start: _start,
+                  end: _end,
+                  maxDays: maxDays,
+                  onTap: _tapDay,
+                ),
               ),
               GlassFooter(
-                _start != null && _end == null
-                    ? 'Now tap the last day.'
-                    : 'Tap the first day, then the last.',
+                [
+                  _start != null && _end == null
+                      ? 'Now tap the last day.'
+                      : 'Tap the first day, then the last.',
+                  if (maxDays != null)
+                    'Your plan allows up to $maxDays days per vacation, '
+                        'so later days are greyed out.',
+                ].join(' '),
               ),
               GlassSection(
                 title: 'Timezone',
@@ -272,12 +305,16 @@ class _Summary extends StatelessWidget {
 class RangeCalendar extends StatefulWidget {
   final DateTime? start;
   final DateTime? end;
+
+  /// The longest range, in days, both ends included. Null for no limit.
+  final int? maxDays;
   final ValueChanged<DateTime> onTap;
   const RangeCalendar({
     super.key,
     required this.start,
     required this.end,
     required this.onTap,
+    this.maxDays,
   });
 
   @override
@@ -375,7 +412,14 @@ class _RangeCalendarState extends State<RangeCalendar> {
   Widget _cell(BuildContext context, DateTime d, DateTime? s, DateTime? e) {
     final theme = Theme.of(context);
     final t = GlassTokens.of(context);
-    final past = d.isBefore(_today);
+    final max = widget.maxDays;
+    // While choosing the last day, days past the plan's length are off.
+    final tooFar =
+        s != null &&
+        e == null &&
+        max != null &&
+        d.difference(s).inDays + 1 > max;
+    final past = d.isBefore(_today) || tooFar;
     final isStart = s != null && DateUtils.isSameDay(d, s);
     final isEnd = e != null && DateUtils.isSameDay(d, e);
     final inside = s != null && e != null && !d.isBefore(s) && !d.isAfter(e);

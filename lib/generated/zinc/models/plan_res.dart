@@ -17,10 +17,12 @@ class PlanRes {
     this.key,
     this.currency,
     this.habitsMax,
+    this.vacationMaxDays,
   });
-  
-  factory PlanRes.fromJson(Map<String, Object?> json) => _$PlanResFromJson(json);
-  
+
+  factory PlanRes.fromJson(Map<String, Object?> json) =>
+      _$PlanResFromJson(json);
+
   final String? key;
   final int priceCents;
   final String? currency;
@@ -29,6 +31,7 @@ class PlanRes {
   final int skipsMonthly;
   final int vacationWindowsYearly;
   final int freezeBase;
+  final int? vacationMaxDays;
 
   Map<String, Object?> toJson() => _$PlanResToJson(this);
 }

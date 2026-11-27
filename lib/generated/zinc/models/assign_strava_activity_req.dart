@@ -8,12 +8,11 @@ part 'assign_strava_activity_req.g.dart';
 
 @JsonSerializable()
 class AssignStravaActivityReq {
-  const AssignStravaActivityReq({
-    this.habitId,
-  });
-  
-  factory AssignStravaActivityReq.fromJson(Map<String, Object?> json) => _$AssignStravaActivityReqFromJson(json);
-  
+  const AssignStravaActivityReq({this.habitId});
+
+  factory AssignStravaActivityReq.fromJson(Map<String, Object?> json) =>
+      _$AssignStravaActivityReqFromJson(json);
+
   final String? habitId;
 
   Map<String, Object?> toJson() => _$AssignStravaActivityReqToJson(this);

@@ -8,12 +8,11 @@ part 'subscribe_req.g.dart';
 
 @JsonSerializable()
 class SubscribeReq {
-  const SubscribeReq({
-    this.tier,
-  });
-  
-  factory SubscribeReq.fromJson(Map<String, Object?> json) => _$SubscribeReqFromJson(json);
-  
+  const SubscribeReq({this.tier});
+
+  factory SubscribeReq.fromJson(Map<String, Object?> json) =>
+      _$SubscribeReqFromJson(json);
+
   final String? tier;
 
   Map<String, Object?> toJson() => _$SubscribeReqToJson(this);
